@@ -1,0 +1,20 @@
+# Ignore node_modules folder in both client and server folders
+**/node_modules/
+
+# Ignore dist folder in Angular client project
+client/dist/
+
+# Ignore any build output folders in the server folder
+server/build/
+server/dist/
+
+# Ignore environment files that contain sensitive information
+**/.env
+
+# Ignore IDE-specific files
+.idea/
+.vscode/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
