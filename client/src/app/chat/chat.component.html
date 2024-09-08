@@ -1,11 +1,31 @@
-<div class="main-container">
-    <h2>Chat</h2>
+<div class="chat-container">
+    <div class="sidebar">
+        <h3>Groups</h3>
+        <select [(ngModel)]="selectedGroup" (ngModelChange)="onGroupSelect()">
+            <option *ngFor="let group of groups" [ngValue]="group">
+                {{ group.name }}
+            </option>
+        </select>
 
-    <div *ngFor="let message of messages">
-        {{ message }}
+        <h3 *ngIf="selectedGroup">Channels</h3>
+        <ul *ngIf="selectedGroup">
+            <li *ngFor="let channel of channels" (click)="onChannelSelect(channel)"
+                [class.selected]="channel === selectedChannel">
+                {{ channel.name }}
+            </li>
+        </ul>
     </div>
 
-    <input type="text" [(ngModel)]="newMessage" placeholder="Type your message..." style="margin-right: 10px;">
-    <button (click)="sendMessage()">Send</button>
+    <div class="chat-area">
+        <div class="messages" #messagesContainer>
+            <div *ngFor="let message of messages" class="message">
+                <span class="sender">{{ message.sender }}:</span> {{ message.content }}
+            </div>
+        </div>
 
+        <div class="input-area">
+            <input type="text" [(ngModel)]="newMessage" placeholder="Type your message...">
+            <button (click)="sendMessage()">Send</button>
+        </div>
+    </div>
 </div>
