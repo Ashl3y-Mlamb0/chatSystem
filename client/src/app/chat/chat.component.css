@@ -1,0 +1,63 @@
+.chat-container {
+    display: flex;
+    height: calc(100vh - 60px);
+}
+
+.sidebar {
+    width: 200px;
+    padding: 20px;
+    border-right: 1px solid #ccc;
+}
+
+.sidebar ul li {
+    cursor: pointer;
+}
+
+.sidebar ul li.selected {
+    font-weight: bold;
+    text-decoration: underline;
+    /* Add underline */
+}
+
+.chat-area {
+    flex-grow: 1;
+    /* Chat area takes up remaining space */
+    display: flex;
+    flex-direction: column;
+}
+
+.messages {
+    flex-grow: 1;
+    /* Messages area expands to fill available space */
+    overflow-y: auto;
+    /* Add scrollbar if needed */
+    padding: 20px;
+}
+
+.message {
+    margin-bottom: 10px;
+}
+
+.sender {
+    font-weight: bold;
+}
+
+.input-area {
+    padding: 20px;
+    border-top: 1px solid #ccc;
+    display: flex;
+    /* Enable flexbox for the input area */
+    align-items: center;
+    /* Vertically align the input and button */
+}
+
+.input-area input {
+    flex-grow: 1;
+    /* Allow the input to expand and take up available space */
+    padding: 10px;
+    margin-right: 10px;
+}
+
+.input-area button {
+    padding: 10px 20px;
+}

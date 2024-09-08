@@ -1,7 +1,10 @@
 .navbar {
     background-color: #222222;
     color: #fff;
-    padding: 1rem 0;
+    height: 60px;
+    display: flex;
+    /* Enable flexbox for the navbar itself */
+
 }
 
 .container {
@@ -9,6 +12,7 @@
     justify-content: space-between;
     align-items: center;
     max-width: 960px;
+    width: 100%;
     margin: 0 auto;
 }
 
