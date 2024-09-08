@@ -1,3 +1,37 @@
 <div class="main-container">
-    <p>channel-list works!</p>
+    <h2>Channel Management</h2>
+
+    <select [(ngModel)]="selectedGroup" (ngModelChange)="fetchChannels()">
+        <option *ngFor="let group of groups" [ngValue]="group">
+            {{ group.name }}
+        </option>
+    </select>
+
+    <div *ngIf="selectedGroup">
+        <h3>Channels in {{ selectedGroup.name }}</h3>
+
+        <ul>
+            <li *ngFor="let channel of channels">
+                <div *ngIf="!editingChannel || editingChannel.id !== channel.id">
+                    {{ channel.name }}
+                    <button *ngIf="authService.hasRole('superAdmin') || authService.isGroupAdmin(selectedGroup.id)"
+                        (click)="editChannel(channel)">Edit</button>
+                    <button *ngIf="authService.hasRole('superAdmin') || authService.isGroupAdmin(selectedGroup.id)"
+                        (click)="deleteChannel(channel.id)">Delete</button>
+                </div>
+
+                <div *ngIf="editingChannel && editingChannel.id === channel.id">
+                    <input type="text" [(ngModel)]="editingChannel.name" placeholder="New Channel Name">
+                    <button (click)="saveChannel()">Save</button>
+                    <button (click)="cancelEdit()">Cancel</button>
+                </div>
+            </li>
+        </ul>
+
+        <div *ngIf="authService.hasRole('groupAdmin') || authService.hasRole('superAdmin')">
+            <h3>Create New Channel</h3>
+            <input type="text" [(ngModel)]="newChannelName" placeholder="Channel Name">
+            <button (click)="createChannel()">Create</button>
+        </div>
+    </div>
 </div>
