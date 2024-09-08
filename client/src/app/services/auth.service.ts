@@ -62,4 +62,10 @@ export class AuthService {
     const user = this.getCurrentUser();
     return user && user.roles && user.roles.includes(role);
   }
+
+  // Check if the current user is an admin of the specified group
+  isGroupAdmin(groupId: string): boolean {
+    const user = this.getCurrentUser();
+    return user && user.groups && user.groups.includes(groupId) && this.hasRole('groupAdmin');
+  }
 }
