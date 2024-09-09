@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { UserService } from './user.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable({
   providedIn: 'root'
@@ -35,7 +36,7 @@ export class AuthService {
     }
 
     // Create the new user object
-    const newUser = { username, email, password, roles: ['user'] };
+    const newUser = { id: uuidv4(), username, email, password, roles: ['user'], groups: [] };
 
     // Add the new user to local storage (replace with backend call in Phase 2)
     this.userService.addUser(newUser);
@@ -67,5 +68,11 @@ export class AuthService {
   isGroupAdmin(groupId: string): boolean {
     const user = this.getCurrentUser();
     return user && user.groups && user.groups.includes(groupId) && this.hasRole('groupAdmin');
+  }
+
+  // Check if the current user is a member of the specified group
+  isGroupMember(groupId: string): boolean {
+    const user = this.getCurrentUser();
+    return user && user.groups && user.groups.includes(groupId);
   }
 }
