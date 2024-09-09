@@ -32,6 +32,7 @@ This project aims to build a real-time text/video chat system with three permiss
     * `name`: string 
     * `admins`: array of user IDs who are admins of this group
     * `channels`: array of channel IDs within this group
+    * `joinRequests`: array of user IDs that have requested to join this group
 
 * **Channel:**
     * `id`: string
@@ -59,8 +60,7 @@ This project aims to build a real-time text/video chat system with three permiss
     * `SignupComponent`:  Handles user registration.
     * `ChatComponent`:  Main chat interface, displays messages, allows sending messages.
     * `GroupListComponent`:  Displays list of groups the user belongs to.
-    * `ChannelListComponent`:  Displays list of channels within a selected group.
-    * `AdminComponent`: UI for admin functions (add/modify/delete users, groups, channels)
+    * `AdminDashboardComponent`: UI for admin functions (add/modify/delete users, groups, channels)
 
 * **Services:**
     * `AuthService`: Handles user authentication and authorization.
@@ -70,14 +70,14 @@ This project aims to build a real-time text/video chat system with three permiss
     * `ChannelService`: Handles channel data and interactions.
 
 * **Models:**
-    * `User`, `Group`, `Channel` classes to represent data structures.
+    * `User`, `Group`, `Channel`, `Message` classes to represent data structures.
 
 * **Routes:**
+    * `/`:  `Redirects to /chat`
     * `/login`:  `LoginComponent`
     * `/signup`:  `SignupComponent`
     * `/chat`: `ChatComponent` 
     * `/groups`: `GroupListComponent` 
-    * `/channels`: `ChannelListComponent` 
     * `/admin`: `AdminComponent`
 
 ## Node Server Architecture
@@ -86,6 +86,7 @@ This project aims to build a real-time text/video chat system with three permiss
     * `user`: User-related routes and logic.
     * `group`:  Group-related routes and logic
     * `channel`: Channel-related routes and logic
+    * `message`: Message-related routes and logic
     * `auth`: Authentication and authorization middleware.
 
 * **Functions, Files, Global Variables:** (To be detailed as implementation progresses)
@@ -135,10 +136,13 @@ This project aims to build a real-time text/video chat system with three permiss
 
 **Chat**
 
-| Route | Method | Parameters | Return Value | Purpose |
-|---|---|---|---|---|
-| `/api/chat/messages` | `GET` | `channelId`, (token in header) | Array of `message` objects | Fetches chat messages for a channel |
-| `/api/chat/messages` | `POST` | `channelId`, `message` content, (token in header) | `message` object or error | Sends a new chat message to a channel |
+| Route              | Method | Parameters                   | Return Value              | Purpose                                    |
+|-------------------|--------|-----------------------------|---------------------------|--------------------------------------------|
+| `/api/chat/messages`     | `GET`  | `channelId`, (token in header) | Array of `message` objects | Fetches chat messages for a channel      |
+| `/api/chat/messages`     | `POST` | `channelId`, `message` content, (token in header) | `message` object or error  | Sends a new chat message to a channel      |
+| `/api/chat/messages/:id` | `GET`  | `id`, (token in header)       | `message` object or error  | Fetches a specific message by ID (if needed) |
+| `/api/chat/messages/:id` | `PUT`  | `id`, updated `message` data, (token in header) | Updated `message` object or error  | Updates a specific message by ID (if allowed) |
+| `/api/chat/messages/:id` | `DELETE` | `id`, (token in header)       | Success message or error  | Deletes a specific message by ID (if allowed) |
 
 ## Client-Server Interaction
 
