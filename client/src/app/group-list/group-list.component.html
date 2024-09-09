@@ -1,3 +1,20 @@
 <div class="main-container">
-    <p>group-list works!</p>
+    <h2>Groups</h2>
+
+    <ul>
+        <li *ngFor="let group of groups">
+            {{ group.name }}
+
+            <div *ngIf="authService.hasRole('superAdmin') || authService.isGroupAdmin(group.id)">
+            </div>
+
+            @if (!authService.isGroupMember(group.id) && !authService.hasRole('superAdmin') &&
+            !authService.hasRole('groupAdmin')){
+            <button (click)="requestAccess(group)">Request Access</button>
+            } @else {
+            (Joined)
+            }
+
+        </li>
+    </ul>
 </div>
