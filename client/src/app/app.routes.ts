@@ -3,7 +3,6 @@ import { LoginComponent } from './login/login.component';
 import { ChatComponent } from './chat/chat.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
 import { GroupListComponent } from './group-list/group-list.component';
-import { ChannelListComponent } from './channel-list/channel-list.component';
 import { SignupComponent } from './signup/signup.component';
 
 export const routes: Routes = [
