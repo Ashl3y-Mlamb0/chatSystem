@@ -12,7 +12,6 @@ export const routes: Routes = [
     { path: 'signup', component: SignupComponent },
     { path: 'chat', component: ChatComponent },
     { path: 'groups', component: GroupListComponent },
-    { path: 'channels', component: ChannelListComponent },
     { path: 'admin', component: AdminDashboardComponent },
 
 ];

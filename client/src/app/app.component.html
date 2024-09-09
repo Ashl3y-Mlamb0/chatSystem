@@ -9,12 +9,14 @@
         <ul class="nav-links">
             @if (authService.getCurrentUser()) {
             <li><a routerLink="/chat">Chat</a></li>
-            <li *ngIf="authService.hasRole('groupAdmin') || authService.hasRole('superAdmin')">
+            <li>
                 <a routerLink="/groups">Groups</a>
             </li>
+
             <li *ngIf="authService.hasRole('groupAdmin') || authService.hasRole('superAdmin')">
-                <a routerLink="/channels">Channels</a>
+                <a routerLink="/admin">Admin</a>
             </li>
+
             <li><a (click)="logout()">Logout</a></li>
             } @else {
             <li><a routerLink="/login">Login</a></li>
