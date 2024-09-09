@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Channel {
   id: string;
@@ -11,7 +12,6 @@ interface Channel {
 })
 export class ChannelService {
   private readonly CHANNELS_KEY = 'channels';
-  private channelCounter = 0; // For generating simple IDs in Phase 1
 
   // Get all channels from local storage
   getChannels(): Channel[] {
@@ -35,7 +35,7 @@ export class ChannelService {
   addChannel(channelName: string, groupId: string): void {
     const channels = this.getChannels();
     const newChannel: Channel = {
-      id: (this.channelCounter++).toString(), // Generate a simple ID
+      id: uuidv4(), // Generate a simple ID
       name: channelName,
       groupId
     };
