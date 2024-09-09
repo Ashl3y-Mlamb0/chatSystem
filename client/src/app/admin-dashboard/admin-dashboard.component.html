@@ -1,1 +1,52 @@
-<p>admin-dashboard</p>
+<div class="main-container">
+    <h2>Admin Dashboard</h2>
+
+    <h3>Group Management</h3>
+    <select [(ngModel)]="selectedGroup" (ngModelChange)="fetchChannels(); fetchJoinRequests()">
+        <option *ngFor="let group of groups" [ngValue]="group">
+            {{ group.name }}
+        </option>
+    </select>
+
+    <div *ngIf="authService.hasRole('groupAdmin') || authService.hasRole('superAdmin')">
+        <h4>Create New Group</h4>
+        <input type="text" [(ngModel)]="newGroupName" placeholder="Group Name">
+        <button (click)="createGroup()">Create</button>
+    </div>
+
+    <div *ngIf="selectedGroup">
+        <h3>Channel Management for {{ selectedGroup.name }}</h3>
+
+        <ul>
+            <li *ngFor="let channel of channels">
+                <div *ngIf="!editingChannel || editingChannel.id !== channel.id">
+                    {{ channel.name }}
+                    <button (click)="editChannel(channel)">Edit</button>
+                    <button (click)="deleteChannel(channel.id)">Delete</button>
+                </div>
+
+                <div *ngIf="editingChannel && editingChannel.id === channel.id">
+                    <input type="text" [(ngModel)]="editingChannel.name" placeholder="New Channel Name">
+                    <button (click)="saveChannel()">Save</button>
+                    <button (click)="cancelChannelEdit()">Cancel</button>
+                </div>
+            </li>
+        </ul>
+
+        <div>
+            <h4>Create New Channel</h4>
+            <input type="text" [(ngModel)]="newChannelName" placeholder="Channel Name">
+            <button (click)="createChannel()">Create</button>
+        </div>
+
+        <h3>Pending Join Requests for {{ selectedGroup.name }}</h3>
+        <ul *ngIf="joinRequests.length > 0">
+            <li *ngFor="let request of joinRequests">
+                {{ userService.getUserById(request.userId)?.username }}
+                <button (click)="approveJoinRequest(request)">Approve</button>
+                <button (click)="rejectJoinRequest(request)">Reject</button>
+            </li>
+        </ul>
+        <p *ngIf="joinRequests.length === 0">No pending join requests.</p>
+    </div>
+</div>
