@@ -24,7 +24,8 @@
         </div>
 
         <div class="input-area">
-            <input type="text" [(ngModel)]="newMessage" placeholder="Type your message...">
+            <input type="text" [(ngModel)]="newMessage" placeholder="Type your message..."
+                (keyup.enter)="sendMessage()">
             <button (click)="sendMessage()">Send</button>
         </div>
     </div>

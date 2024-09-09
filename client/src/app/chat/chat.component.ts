@@ -31,7 +31,7 @@ export class ChatComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.groups = this.groupService.getGroups();
+    this.groups = this.groupService.getAccessibleGroups();
 
     this.route.paramMap.subscribe(params => {
       const groupId = params.get('groupId');

@@ -1,12 +1,15 @@
 import { Injectable } from '@angular/core';
 import { Message } from '../models/message.model';
+import { v4 as uuidv4 } from 'uuid';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
   private readonly MESSAGES_KEY = 'messages';
-  private messageCounter = 0;
+
+  constructor(private authService: AuthService) { }
 
   // Get messages for a channel from local storage
   getMessages(channelId: string): Message[] {
@@ -20,9 +23,9 @@ export class ChatService {
   sendMessage(channelId: string, messageContent: string) {
     const allMessages = this.getAllMessages();
     const newMessage: Message = {
-      _id: (this.messageCounter++).toString(),
+      id: uuidv4(),
       channelId,
-      sender: 'You', // Replace with actual user information in Phase 2
+      sender: this.authService.getCurrentUser()?.username,
       content: messageContent,
       timestamp: new Date()
     };
