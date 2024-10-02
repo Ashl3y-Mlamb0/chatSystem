@@ -31,17 +31,81 @@ const authMiddleware = {
     }
   },
 
-  // Middleware to enforce role-based authorization
+  // Middleware to enforce role-based authorization, with Super Admin bypass
   requireRole: (role) => {
     return (req, res, next) => {
-      // Check if the user has been authenticated and has the required role
+      // Allow Super Admin to bypass any role check
+      if (req.user && req.user.roles.includes("superAdmin")) {
+        return next(); // Super Admins can access anything
+      }
+
+      // Otherwise, check if the user has the required role
       if (!req.user || !req.user.roles || !req.user.roles.includes(role)) {
         return res
           .status(403)
           .json({ error: "Forbidden: insufficient permissions" });
       }
+
       next(); // User has the required role, proceed to the next middleware/route
     };
+  },
+
+  // Middleware to check if the Group Admin is managing a group they are an admin for
+  isGroupAdminForGroup: async (req, res, next) => {
+    const { groupId } = req.params;
+    try {
+      const group = await Group.findById(groupId);
+      if (!group) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+
+      // Allow Super Admins to bypass this check
+      if (req.user && req.user.roles.includes("superAdmin")) {
+        return next(); // Super Admins can manage any group
+      }
+
+      // Check if the user is listed as an admin in the group
+      if (group.admins.includes(req.user._id)) {
+        return next(); // User is an admin of this group, proceed
+      }
+
+      return res.status(403).json({
+        error: "Forbidden: You can only manage groups you are an admin of.",
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  },
+
+  // Middleware to check if the Group Admin is managing a channel in their own group
+  isGroupAdminForChannel: async (req, res, next) => {
+    const { channelId } = req.params; // Extract channel ID from the request
+
+    try {
+      const channel = await Channel.findById(channelId).populate("group");
+      if (!channel) {
+        return res.status(404).json({ error: "Channel not found" });
+      }
+
+      const group = channel.group;
+
+      // Allow Super Admins to bypass this check
+      if (req.user && req.user.roles.includes("superAdmin")) {
+        return next(); // Super Admins can manage any channel
+      }
+
+      // Check if the user is listed as an admin in the group associated with the channel
+      if (group && group.admins.includes(req.user._id)) {
+        return next(); // User is an admin of the group that owns this channel
+      }
+
+      return res.status(403).json({
+        error:
+          "Forbidden: You can only manage channels in groups you are an admin of.",
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
   },
 };
 

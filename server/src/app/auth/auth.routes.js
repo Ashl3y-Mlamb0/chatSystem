@@ -28,20 +28,4 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// Example of a protected route using the JWT token
-router.get("/protected", async (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1]; // Get token from the Authorization header
-  if (!token) {
-    return res.status(401).json({ error: "Token is required" });
-  }
-
-  try {
-    // Verify the token using the auth service
-    const decoded = await authService.verifyToken(token);
-    res.json({ message: "Protected route accessed", decoded });
-  } catch (err) {
-    res.status(401).json({ error: "Invalid or expired token" });
-  }
-});
-
 module.exports = router;

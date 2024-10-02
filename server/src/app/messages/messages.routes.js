@@ -1,23 +1,64 @@
 const express = require("express");
 const router = express.Router();
+const messagesService = require("./messages.service");
+const authMiddleware = require("../../middleware/auth.middleware");
 
-// ... (Add authentication middleware)
+// POST /api/messages - Send a new message (All authenticated users)
+router.post(
+  "/",
+  authMiddleware.verifyToken, // Ensure the user is authenticated
+  async (req, res) => {
+    const { content, channelId, imageUrl } = req.body;
 
-// POST /api/groups (Group Admin only)
-router.post("/", async (req, res) => {
-  // ... (Add authorization logic to check for Group Admin role)
-
-  const { name } = req.body;
-  const adminId = req.user.id; // Assuming you have user information in the request after authentication
-
-  try {
-    // await groupService.createGroup(name, adminId);
-    res.status(201).json({ message: "Group created successfully" });
-  } catch (err) {
-    res.status(500).json({ error: "Internal Server Error" });
+    try {
+      const message = await messagesService.createMessage(
+        content,
+        req.user._id,
+        channelId,
+        imageUrl
+      );
+      res.status(201).json({ message: "Message sent successfully", message });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   }
-});
+);
 
-// ... (Implement other group-related routes using groupService)
+// GET /api/messages/:channelId - Get all messages for a specific channel (All authenticated users)
+router.get(
+  "/:channelId",
+  authMiddleware.verifyToken, // Ensure the user is authenticated
+  async (req, res) => {
+    const { channelId } = req.params;
+
+    try {
+      const messages = await messagesService.getMessagesByChannel(channelId);
+      res.json(messages);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// DELETE /api/messages/:messageId - Delete a message (Only Super Admins or Group Admins of the channel's group)
+router.delete(
+  "/:messageId",
+  authMiddleware.verifyToken,
+  authMiddleware.requireRole("groupAdmin"), // Only Group Admins and Super Admins
+  authMiddleware.isGroupAdminForChannel, // Check if the user is a group admin for the channel's group
+  async (req, res) => {
+    const { messageId } = req.params;
+
+    try {
+      const deletedMessage = await messagesService.deleteMessage(messageId);
+      if (!deletedMessage) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      res.json({ message: "Message deleted successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
 
 module.exports = router;

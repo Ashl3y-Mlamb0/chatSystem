@@ -1,32 +1,44 @@
-const fs = require("fs");
-const path = require("path");
+const Group = require("../../models/Group");
 
-const groupsFilePath = path.join(__dirname, "../data/groups.json");
-
-const groupService = {
-  createGroup: (name, adminId) => {
-    // const groups = readFromFile(groupsFilePath);
-
-    const newGroup = {
-      id: groups.length + 1,
+const groupsService = {
+  // Create a new group and set the creator as admin
+  createGroup: async (name, description, creatorId) => {
+    const group = new Group({
       name,
-      admins: [adminId],
-      channels: [],
-    };
-
-    groups.push(newGroup);
-    // writeToFile(groupsFilePath, groups);
+      description,
+      admins: [creatorId], // Add the creator to the admins array
+    });
+    await group.save();
+    return group;
   },
 
-  getAllGroups: () => {
-    // return readFromFile(groupsFilePath);
+  // Get group by ID
+  getGroupById: async (groupId) => {
+    return await Group.findById(groupId).populate("admins", "username"); // Populate admin details
   },
 
-  deleteGroupById: (groupId) => {
-    // let groups = readFromFile(groupsFilePath);
-    groups = groups.filter((g) => g.id !== groupId);
-    // writeToFile(groupsFilePath, groups);
+  // Get all groups
+  getAllGroups: async () => {
+    return await Group.find().populate("admins", "username"); // Populate admin details
+  },
+
+  // Update group information (name, description)
+  updateGroup: async (groupId, name, description) => {
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return null;
+    }
+    group.name = name;
+    group.description = description;
+    await group.save();
+    return group;
+  },
+
+  // Delete a group by ID
+  deleteGroup: async (groupId) => {
+    const group = await Group.findByIdAndDelete(groupId);
+    return group;
   },
 };
 
-module.exports = groupService;
+module.exports = groupsService;

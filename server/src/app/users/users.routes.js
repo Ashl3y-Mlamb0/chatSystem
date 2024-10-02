@@ -1,13 +1,109 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+const usersService = require("./users.service");
+const authMiddleware = require("../../middleware/auth.middleware");
+const multer = require("multer");
 
-// Placeholder route handlers
-router.post('/login', (req, res) => {
-    // Handle login logic here
-});
+// Configure multer for profile image uploads
+const upload = multer({ dest: "uploads/" });
 
-router.post('/register', (req, res) => {
-    // Handle registration logic here
-});
+// GET /api/users/me - Get logged-in user's profile (Authenticated users only)
+router.get(
+  "/me",
+  authMiddleware.verifyToken, // Ensure the user is authenticated
+  async (req, res) => {
+    try {
+      const user = await usersService.getUserById(req.user._id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// PUT /api/users/me - Update logged-in user's profile (Authenticated users only)
+router.put(
+  "/me",
+  authMiddleware.verifyToken, // Ensure the user is authenticated
+  async (req, res) => {
+    const { username, email } = req.body;
+
+    try {
+      const updatedUser = await usersService.updateUserProfile(req.user._id, {
+        username,
+        email,
+      });
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({ message: "Profile updated successfully", updatedUser });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// PUT /api/users/me/avatar - Update logged-in user's profile picture (Authenticated users only)
+router.put(
+  "/me/avatar",
+  authMiddleware.verifyToken, // Ensure the user is authenticated
+  upload.single("avatar"), // Handle profile picture upload
+  async (req, res) => {
+    try {
+      const avatarPath = req.file ? `/uploads/${req.file.filename}` : null;
+      const updatedUser = await usersService.updateUserAvatar(
+        req.user._id,
+        avatarPath
+      );
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({
+        message: "Profile picture updated successfully",
+        updatedUser,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// GET /api/users/:userId - Get user by ID (Only Super Admins)
+router.get(
+  "/:userId",
+  authMiddleware.verifyToken,
+  authMiddleware.requireRole("superAdmin"), // Only Super Admins can view any user's profile
+  async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+      const user = await usersService.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// GET /api/users - Get all users (Only Super Admins)
+router.get(
+  "/",
+  authMiddleware.verifyToken,
+  authMiddleware.requireRole("superAdmin"), // Only Super Admins can list all users
+  async (req, res) => {
+    try {
+      const users = await usersService.getAllUsers();
+      res.json(users);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
 
 module.exports = router;

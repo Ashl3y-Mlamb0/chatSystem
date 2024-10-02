@@ -1,25 +1,107 @@
 const express = require("express");
 const router = express.Router();
-const groupService = require("./groups.service");
+const groupsService = require("./groups.service");
 const authMiddleware = require("../../middleware/auth.middleware");
 
-// ... (Add authentication middleware)
+// POST /api/groups - Create a new group (Only Group Admins and Super Admins)
+router.post(
+  "/",
+  authMiddleware.verifyToken,
+  authMiddleware.requireRole("groupAdmin"), // Only Group Admins and Super Admins
+  async (req, res) => {
+    const { name, description } = req.body;
 
-// POST /api/groups (Group Admin only)
-router.post("/", authMiddleware.verifyToken, async (req, res) => {
-  // ... (Add authorization logic to check for Group Admin role)
-  ``;
-  const { name } = req.body;
-  const adminId = req.user.id; // Assuming you have user information in the request after authentication
-
-  try {
-    await groupService.createGroup(name, adminId);
-    res.status(201).json({ message: "Group created successfully" });
-  } catch (err) {
-    res.status(500).json({ error: "Internal Server Error" });
+    try {
+      const group = await groupsService.createGroup(
+        name,
+        description,
+        req.user._id
+      ); // req.user._id is the creator
+      res.status(201).json({ message: "Group created successfully", group });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   }
-});
+);
 
-// ... (Implement other group-related routes using groupService)
+// GET /api/groups/:groupId - Get a group by ID (Accessible by all authenticated users)
+router.get(
+  "/:groupId",
+  authMiddleware.verifyToken, // Any authenticated user can view group details
+  async (req, res) => {
+    const { groupId } = req.params;
+
+    try {
+      const group = await groupsService.getGroupById(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      res.json(group);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// PUT /api/groups/:groupId - Update a group (Only Group Admins for their groups or Super Admins)
+router.put(
+  "/:groupId",
+  authMiddleware.verifyToken,
+  authMiddleware.requireRole("groupAdmin"), // Only Group Admins and Super Admins
+  authMiddleware.isGroupAdminForGroup, // Check if user is an admin of this group
+  async (req, res) => {
+    const { groupId } = req.params;
+    const { name, description } = req.body;
+
+    try {
+      const updatedGroup = await groupsService.updateGroup(
+        groupId,
+        name,
+        description
+      );
+      if (!updatedGroup) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      res.json({ message: "Group updated successfully", updatedGroup });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// DELETE /api/groups/:groupId - Delete a group (Only Super Admins or Group Admins for their groups)
+router.delete(
+  "/:groupId",
+  authMiddleware.verifyToken,
+  authMiddleware.requireRole("groupAdmin"), // Only Group Admins and Super Admins
+  authMiddleware.isGroupAdminForGroup, // Check if user is an admin of this group
+  async (req, res) => {
+    const { groupId } = req.params;
+
+    try {
+      const deletedGroup = await groupsService.deleteGroup(groupId);
+      if (!deletedGroup) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      res.json({ message: "Group deleted successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// GET /api/groups - Get all groups (Accessible by all authenticated users)
+router.get(
+  "/",
+  authMiddleware.verifyToken, // Any authenticated user can view all groups
+  async (req, res) => {
+    try {
+      const groups = await groupsService.getAllGroups();
+      res.json(groups);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
 
 module.exports = router;
