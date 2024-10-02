@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const channelService = require('./channel.service');
+const channelService = require('./channels.service');
+const authenticate = require('../../middleware/auth.middleware');
 
-// ... (Add authentication middleware)
 
 // POST /api/groups/:groupId/channels (Group Admin only)
 router.post('/:groupId/channels', authenticate, async (req, res) => {
-    // ... (Add authorization logic to check for Group Admin role and ownership of the group)
 
     const groupId = parseInt(req.params.groupId);
     const { name } = req.body;
@@ -19,6 +18,5 @@ router.post('/:groupId/channels', authenticate, async (req, res) => {
     }
 });
 
-// ... (Implement other channel-related routes using channelService)
 
 module.exports = router;

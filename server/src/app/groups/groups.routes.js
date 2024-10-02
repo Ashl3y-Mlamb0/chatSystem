@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const groupService = require('./group.service');
+const groupService = require('./groups.service');
+const authenticate = require('../../middleware/auth.middleware');
 
 // ... (Add authentication middleware)
 

@@ -1,12 +1,10 @@
-// server/middleware/auth.middleware.js
-
 const { readFromFile } = require('../utils/data');
 const path = require('path');
 
 const usersFilePath = path.join(__dirname, '../../data/users.json');
 
 const authenticate = (req, res, next) => {
-    const { username, password } = req.headers; // Assuming you're sending credentials in headers for now
+    const { username, password } = req.headers;
 
     if (!username || !password) {
         return res.status(401).json({ error: 'Unauthorized - Missing credentials' });
