@@ -8,6 +8,7 @@ const authRoutes = require("./app/auth/auth.routes");
 const userRoutes = require("./app/users/users.routes");
 const groupRoutes = require("./app/groups/groups.routes");
 const channelRoutes = require("./app/channels/channels.routes");
+const messageRoutes = require("./app/messages/messages.routes");
 
 const app = express();
 const server = http.createServer(app);
@@ -33,6 +34,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/channels", channelRoutes);
+app.use("/api/messages", messageRoutes);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
