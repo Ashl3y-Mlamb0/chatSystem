@@ -9,8 +9,11 @@ const messageSchema = new mongoose.Schema(
     },
     content: { type: String }, // Message content
     imageUrl: { type: String }, // Optional image attachment
-    channel: { type: mongoose.Schema.Types.ObjectId, ref: "Channel" }, // Reference to the channel
-    createdAt: { type: Date, default: Date.now },
+    channel: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Channel",
+      required: true,
+    }, // Reference to the channel
   },
   { timestamps: true }
 );

@@ -6,6 +6,8 @@ const groupSchema = new mongoose.Schema(
     description: String,
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Array of user references
     channels: [{ type: mongoose.Schema.Types.ObjectId, ref: "Channel" }], // Array of channels
+    admins: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Admins of the group
+    joinRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Users requesting to join the group
   },
   { timestamps: true }
 );

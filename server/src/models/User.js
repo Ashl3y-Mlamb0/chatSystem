@@ -6,6 +6,8 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     avatar: { type: String }, // Path to profile image
+    roles: { type: [String], default: ["user"] }, // e.g., ['user', 'groupAdmin', 'superAdmin']
+    groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }], // Groups the user is part of
   },
   { timestamps: true }
 );
