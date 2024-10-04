@@ -1,7 +1,9 @@
 const authService = require("../app/auth/auth.service");
+const User = require("../models/User");
+const Group = require("../models/Group");
 
 const authMiddleware = {
-  // Middleware to verify JWT token
+  // Middleware to verify JWT token and fetch user from the database
   verifyToken: async (req, res, next) => {
     try {
       // Get token from Authorization header
@@ -20,9 +22,19 @@ const authMiddleware = {
 
       // Verify the token using the auth service
       const decoded = await authService.verifyToken(token);
+      const userId = decoded.userId; // Assuming the token contains userId
 
-      // Attach user info to request object (e.g., userId, roles)
-      req.user = decoded;
+      // Fetch the user from the database, excluding password, groups, and timestamps
+      const user = await User.findById(userId)
+        .select("username email avatar roles") // Include specific fields and omit others
+        .lean(); // Return a plain JavaScript object
+
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      // Attach the user info to the request object
+      req.user = user;
 
       // Proceed to the next middleware or route handler
       next();
@@ -52,7 +64,7 @@ const authMiddleware = {
 
   // Middleware to check if the Group Admin is managing a group they are an admin for
   isGroupAdminForGroup: async (req, res, next) => {
-    const { groupId } = req.params;
+    const groupId = req.params.groupId || req.body.groupId;
     try {
       const group = await Group.findById(groupId);
       if (!group) {
@@ -79,7 +91,7 @@ const authMiddleware = {
 
   // Middleware to check if the Group Admin is managing a channel in their own group
   isGroupAdminForChannel: async (req, res, next) => {
-    const { channelId } = req.params; // Extract channel ID from the request
+    const channelId = req.params.channelId || req.body.channelId;
 
     try {
       const channel = await Channel.findById(channelId).populate("group");
