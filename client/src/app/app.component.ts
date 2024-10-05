@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common'; // Import CommonModule
   standalone: true,
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  imports: [RouterOutlet, RouterLink, CommonModule]
+  imports: [RouterOutlet, RouterLink, CommonModule],
 })
 export class AppComponent implements OnInit {
   constructor(public authService: AuthService, private router: Router) {
