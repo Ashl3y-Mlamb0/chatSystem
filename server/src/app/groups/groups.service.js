@@ -22,6 +22,19 @@ const groupsService = {
     return await Group.find().populate("admins", "username"); // Populate admin details
   },
 
+  // Get groups accessible by the current user
+  getAccessibleGroups: async (userId, isSuperAdmin) => {
+    // If the user is a super admin, return all groups
+    if (isSuperAdmin) {
+      return await Group.find().populate("admins", "username");
+    }
+
+    // Otherwise, return groups where the user is an admin or a member
+    return await Group.find({
+      $or: [{ admins: userId }, { members: userId }],
+    }).populate("admins", "username");
+  },
+
   // Update group information (name, description)
   updateGroup: async (groupId, name, description) => {
     const group = await Group.findById(groupId);

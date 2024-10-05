@@ -3,6 +3,32 @@ const router = express.Router();
 const groupsService = require("./groups.service");
 const authMiddleware = require("../../middleware/auth.middleware");
 
+// GET /api/groups/accessible - Get groups accessible by the current user
+router.get(
+  "/accessible",
+  authMiddleware.verifyToken, // Ensure the user is authenticated
+  async (req, res) => {
+    try {
+      const userId = req.user._id; // Get the user ID from the token
+      const isSuperAdmin = req.user.role === "superAdmin"; // Check if user is a super admin
+
+      // Use the groupsService to get the accessible groups
+      const groups = await groupsService.getAccessibleGroups(
+        userId,
+        isSuperAdmin
+      );
+
+      if (!groups || groups.length === 0) {
+        return res.status(404).json({ message: "No accessible groups found" });
+      }
+
+      res.json(groups); // Return the accessible groups
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // POST /api/groups - Create a new group (Only Group Admins and Super Admins)
 router.post(
   "/",
@@ -84,20 +110,6 @@ router.delete(
         return res.status(404).json({ message: "Group not found" });
       }
       res.json({ message: "Group deleted successfully" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  }
-);
-
-// GET /api/groups - Get all groups (Accessible by all authenticated users)
-router.get(
-  "/",
-  authMiddleware.verifyToken, // Any authenticated user can view all groups
-  async (req, res) => {
-    try {
-      const groups = await groupsService.getAllGroups();
-      res.json(groups);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
