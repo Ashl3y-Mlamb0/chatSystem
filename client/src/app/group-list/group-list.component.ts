@@ -1,15 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { GroupService } from '../services/group.service';
 import { AuthService } from '../services/auth.service';
 import { Group } from '../models/group.model';
 
 @Component({
   selector: 'app-group-list',
-  standalone: true,
-  imports: [CommonModule],
   templateUrl: './group-list.component.html',
-  styleUrls: ['./group-list.component.css']
+  styleUrls: ['./group-list.component.css'],
 })
 export class GroupListComponent implements OnInit {
   groups: Group[] = [];
@@ -17,31 +14,38 @@ export class GroupListComponent implements OnInit {
   constructor(
     private groupService: GroupService,
     public authService: AuthService
-  ) { }
+  ) {}
 
   ngOnInit() {
     this.fetchGroups();
   }
 
+  // Fetch accessible groups based on user roles
   fetchGroups() {
-    this.groups = this.groupService.getGroups();
+    this.groupService.getAccessibleGroups().subscribe({
+      next: (groups: Group[]) => {
+        this.groups = groups;
+      },
+      error: (err) => console.error('Error fetching groups', err),
+    });
   }
 
+  // Request access to a group
   requestAccess(group: Group) {
-    const currentUserId = this.authService.getCurrentUser().id;
-    console.log(currentUserId)
-    if (currentUserId) {
-      // Check if the user has already requested access to this group
-      const existingRequests = this.groupService.getJoinRequests(group.id);
-      if (existingRequests.includes(currentUserId)) {
-        alert('You have already requested access to this group.');
-        return;
-      }
+    const userId = this.authService.getCurrentUser()?.id; // Get the current user's ID
 
-      this.groupService.addJoinRequest(group.id, currentUserId);
-      alert(`Access request sent for group: ${group.name}`);
+    if (
+      userId &&
+      confirm(`Do you want to request access to the group "${group.name}"?`)
+    ) {
+      this.groupService.addJoinRequest(group._id, userId).subscribe({
+        next: () => {
+          alert(`Access request sent for group "${group.name}"`);
+        },
+        error: (err) => console.error('Error requesting access', err),
+      });
     } else {
-      // Handle the case where the user is not logged in (e.g., redirect to login)
+      console.error('User ID is missing or confirmation was cancelled.');
     }
   }
 }

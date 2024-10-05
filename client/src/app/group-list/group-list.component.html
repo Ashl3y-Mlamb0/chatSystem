@@ -5,16 +5,20 @@
         <li *ngFor="let group of groups">
             {{ group.name }}
 
+            <!-- Show admin options if the user is a superAdmin or groupAdmin -->
             <div *ngIf="authService.hasRole('superAdmin') || authService.isGroupAdmin(group.id)">
+                (Admin)
             </div>
 
-            @if (!authService.isGroupMember(group.id) && !authService.hasRole('superAdmin') &&
-            !authService.hasRole('groupAdmin')){
-            <button (click)="requestAccess(group)">Request Access</button>
-            } @else {
-            (Joined)
-            }
+            <!-- Show request access button if the user is not a member, groupAdmin, or superAdmin -->
+            <div *ngIf="!authService.isGroupMember(group.id) && !authService.hasRole('superAdmin') && !authService.hasRole('groupAdmin')">
+                <button (click)="requestAccess(group)">Request Access</button>
+            </div>
 
+            <!-- If the user is already a member, show that they have joined -->
+            <div *ngIf="authService.isGroupMember(group.id)">
+                (Joined)
+            </div>
         </li>
     </ul>
 </div>
