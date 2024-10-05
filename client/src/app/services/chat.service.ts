@@ -1,40 +1,90 @@
 import { Injectable } from '@angular/core';
+import { Socket, SocketIoConfig, SocketIoModule } from 'ngx-socket-io';
+import { environment } from '../../environments/environment'; // Your backend URL
+import { AuthService } from './auth.service'; // AuthService for fetching token
+import { Observable } from 'rxjs';
 import { Message } from '../models/message.model';
-import { v4 as uuidv4 } from 'uuid';
-import { AuthService } from './auth.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ChatService {
-  private readonly MESSAGES_KEY = 'messages';
+  private socket: Socket; // The socket instance
 
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {
+    // Get the auth token from AuthService or localStorage
+    const token = localStorage.getItem('authToken');
 
-  // Get messages for a channel from local storage
-  getMessages(channelId: string): Message[] {
-    const allMessagesData = localStorage.getItem(this.MESSAGES_KEY);
-    const allMessages = allMessagesData ? JSON.parse(allMessagesData) as Message[] : [];
-
-    return allMessages.filter(message => message.channelId === channelId);
-  }
-
-  // Send a message (store in local storage)
-  sendMessage(channelId: string, messageContent: string) {
-    const allMessages = this.getAllMessages();
-    const newMessage: Message = {
-      id: uuidv4(),
-      channelId,
-      sender: this.authService.getCurrentUser()?.username,
-      content: messageContent,
-      timestamp: new Date()
+    // Configure the Socket.IO connection with the backend URL and token
+    const config: SocketIoConfig = {
+      url: environment.socketUrl, // Set the socket backend URL
+      options: {
+        transportOptions: {
+          polling: {
+            extraHeaders: {
+              Authorization: `Bearer ${token}`, // Pass the token as an authorization header
+            },
+          },
+        },
+      },
     };
-    allMessages.push(newMessage);
-    localStorage.setItem(this.MESSAGES_KEY, JSON.stringify(allMessages));
+
+    // Initialize the socket with the configuration
+    this.socket = new Socket(config);
+
+    // Handle connection errors and reconnections
+    this.handleConnectionErrors();
   }
 
-  private getAllMessages(): Message[] {
-    const allMessagesData = localStorage.getItem(this.MESSAGES_KEY);
-    return allMessagesData ? JSON.parse(allMessagesData) as Message[] : [];
+  // Join a specific channel
+  joinChannel(channelId: string) {
+    this.socket.emit('joinChannel', channelId);
+  }
+
+  // Leave a specific channel
+  leaveChannel(channelId: string) {
+    this.socket.emit('leaveChannel', channelId);
+  }
+
+  // Send a message
+  sendMessage(channelId: string, messageContent: string) {
+    this.socket.emit('sendMessage', { channelId, content: messageContent });
+  }
+
+  // Fetch previous messages when a channel is selected
+  getPreviousMessages(): Observable<Message[]> {
+    return this.socket.fromEvent<Message[]>('previousMessages');
+  }
+
+  // Listen for real-time messages
+  listenForNewMessages(): Observable<Message> {
+    return this.socket.fromEvent<Message>('receiveMessage');
+  }
+
+  // Listen for errors
+  listenForErrors(): Observable<any> {
+    return this.socket.fromEvent<any>('error');
+  }
+
+  // Listen for socket connection errors, disconnections, and reconnections
+  handleConnectionErrors() {
+    this.socket.on('connect_error', (error: any) => {
+      console.error('Connection error:', error);
+    });
+
+    this.socket.on('disconnect', (reason: any) => {
+      console.log('Socket disconnected:', reason);
+    });
+
+    this.socket.on('reconnect', (attemptNumber: number) => {
+      console.log('Socket reconnected after', attemptNumber, 'attempts');
+    });
+  }
+
+  // Disconnect socket when no longer needed
+  disconnectSocket() {
+    if (this.socket) {
+      this.socket.disconnect();
+    }
   }
 }

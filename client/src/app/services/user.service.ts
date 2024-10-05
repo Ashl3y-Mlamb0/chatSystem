@@ -1,48 +1,56 @@
 import { Injectable } from '@angular/core';
-import { v4 as uuidv4 } from 'uuid';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { User } from '../models/user.model';
+import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment'; // Adjust path as necessary
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  public readonly USERS_KEY = 'users';
+  private apiUrl = `${environment.apiUrl}/users`; // Base URL for user management
 
-  constructor() {
-    this.initializeSuperUser(); // Call this in the constructor
+  constructor(private http: HttpClient, private authService: AuthService) {}
+
+  // Helper method to get the headers with authorization token
+  private getHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
   }
 
-  private initializeSuperUser() {
-    const users = this.getUsers();
-    if (users.length === 0) { // If no users exist, create the 'super' user
-      const superUser = {
-        id: uuidv4(),
-        username: 'super',
-        password: '123',
-        roles: ['superAdmin'],
-        groups: []
-      };
-      this.addUser(superUser);
-    }
+  // Get all users (Admin only)
+  getUsers(): Observable<User[]> {
+    return this.http.get<User[]>(this.apiUrl, { headers: this.getHeaders() });
   }
 
-  // Get all users from local storage
-  getUsers(): any[] {
-    const usersData = localStorage.getItem(this.USERS_KEY);
-    return usersData ? JSON.parse(usersData) : [];
+  // Get the current logged-in user's profile
+  getCurrentUser(): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/me`, { headers: this.getHeaders() });
   }
 
-  // Get a user by their ID
-  getUserById(userId: string): User | undefined {
-    const users = this.getUsers();
-    return users.find(user => user.id === userId);
+  // Update the current user's profile
+  updateCurrentUser(updatedUser: User): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/me`, updatedUser, { headers: this.getHeaders() });
   }
 
-  // Add a new user to local storage
-  addUser(user: any): void {
-    const users = this.getUsers();
-    users.push(user);
-    localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+  // Update the current user's avatar (profile picture)
+  updateAvatar(avatarFile: File): Observable<User> {
+    const formData = new FormData();
+    formData.append('avatar', avatarFile);
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${this.authService.getToken()}`
+    });
+
+    return this.http.put<User>(`${this.apiUrl}/me/avatar`, formData, { headers });
   }
 
+  // Get a specific user by their ID (Super Admin only)
+  getUserById(userId: string): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/${userId}`, { headers: this.getHeaders() });
+  }
 }

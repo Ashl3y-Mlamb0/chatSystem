@@ -1,61 +1,65 @@
 import { Injectable } from '@angular/core';
-import { UserService } from './user.service';
-import { v4 as uuidv4 } from 'uuid';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { environment } from '../../environments/environment'; // Assuming you have an environment file with the API URL
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private readonly CURRENT_USER_KEY = 'currentUser'; // Key for storing the current user in local storage
+  private readonly TOKEN_KEY = 'authToken'; // Key for storing the JWT token
 
-  constructor(private userService: UserService) { } // Inject UserService
+  private apiUrl = environment.apiUrl; // The base URL for your backend API
 
-  // For Phase 1, simulate authentication and store current user in local storage
-  authenticate(username: string, password: string): boolean {
-    const users = this.userService.getUsers(); // Get all users from UserService
+  constructor(private http: HttpClient) {}
 
-    // Find the user with matching username and password (replace with actual logic in Phase 2)
-    const user = users.find(u => u.username === username && u.password === password);
-
-    if (user) {
-      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
-      return true;
-    } else {
-      return false;
-    }
+  // Login and get a JWT token
+  authenticate(username: string, password: string): Observable<any> {
+    return this.http
+      .post<any>(`${this.apiUrl}/auth/login`, { username, password })
+      .pipe(
+        map((response) => {
+          // Store the token and user information in local storage
+          localStorage.setItem(this.TOKEN_KEY, response.token);
+          localStorage.setItem(
+            this.CURRENT_USER_KEY,
+            JSON.stringify(response.user)
+          );
+          return response.user;
+        })
+      );
   }
 
-  signup(username: string, email: string, password: string): boolean {
-    const users = this.userService.getUsers();
-
-    // Check if username is already taken
-    const existingUser = users.find(u => u.username === username);
-    if (existingUser) {
-      // Handle username conflict (e.g., display an error message)
-      return false;
-    }
-
-    // Create the new user object
-    const newUser = { id: uuidv4(), username, email, password, roles: ['user'], groups: [] };
-
-    // Add the new user to local storage (replace with backend call in Phase 2)
-    this.userService.addUser(newUser);
-
-    // Simulate login after signup (replace with actual login in Phase 2)
-    this.authenticate(username, password);
-
-    return true; // Signup successful
+  // Register a new user
+  signup(username: string, email: string, password: string): Observable<any> {
+    return this.http
+      .post<any>(`${this.apiUrl}/auth/register`, { username, email, password })
+      .pipe(
+        map((response) => {
+          // You may automatically log the user in after signup
+          this.authenticate(username, password).subscribe();
+          return response;
+        })
+      );
   }
 
-  // Get the currently logged-in user (or null if not logged in)
+  // Get the currently logged-in user from local storage
   getCurrentUser(): any {
     const userData = localStorage.getItem(this.CURRENT_USER_KEY);
     return userData ? JSON.parse(userData) : null;
   }
 
+  // Get the JWT token from local storage
+  getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
   // Logout the user (clear local storage)
   logout(): void {
     localStorage.removeItem(this.CURRENT_USER_KEY);
+    localStorage.removeItem(this.TOKEN_KEY);
   }
 
   // Check if the user has a specific role
@@ -67,12 +71,25 @@ export class AuthService {
   // Check if the current user is an admin of the specified group
   isGroupAdmin(groupId: string): boolean {
     const user = this.getCurrentUser();
-    return user && user.groups && user.groups.includes(groupId) && this.hasRole('groupAdmin');
+    return (
+      user &&
+      user.groups &&
+      user.groups.includes(groupId) &&
+      this.hasRole('groupAdmin')
+    );
   }
 
   // Check if the current user is a member of the specified group
   isGroupMember(groupId: string): boolean {
     const user = this.getCurrentUser();
     return user && user.groups && user.groups.includes(groupId);
+  }
+
+  // Get the headers for authenticated requests (used for API calls that require the token)
+  getHeaders(): HttpHeaders {
+    const token = this.getToken();
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+    });
   }
 }

@@ -1,123 +1,99 @@
 import { Injectable } from '@angular/core';
-import { UserService } from './user.service';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { Group } from '../models/group.model';
-import { User } from '../models/user.model';
-import { v4 as uuidv4 } from 'uuid';
-import { AuthService } from '../services/auth.service';
-
+import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment'; // Adjust path if necessary
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class GroupService {
-  private readonly GROUPS_KEY = 'groups';
+  private apiUrl = `${environment.apiUrl}/groups`; // Base URL for group management
 
-  constructor(private userService: UserService, private authService: AuthService) { }
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
-  // Get all groups from local storage
-  getGroups(): Group[] {
-    const groupsData = localStorage.getItem(this.GROUPS_KEY);
-    return groupsData ? JSON.parse(groupsData) as Group[] : [];
+  // Get all groups from the server (Admin only)
+  getGroups(): Observable<Group[]> {
+    return this.http.get<Group[]>(this.apiUrl, {
+      headers: this.authService.getHeaders(),
+    });
   }
 
-  // Get groups that the current user can access
-  getAccessibleGroups(): Group[] {
-    if (this.authService.hasRole('superAdmin')) {
-      // Super admins can see all groups
-      return this.getGroups();
-    } else {
-      const currentUser = this.authService.getCurrentUser();
-      if (currentUser) {
-        const allGroups = this.getGroups();
-        return allGroups.filter(group => {
-          // Normal users can only see groups they're a member of
-          // Group admins can see groups they're an admin of
-          return currentUser.groups.includes(group.id) || group.admins.includes(currentUser.id);
-        });
-      } else {
-        // If not logged in, return an empty array or handle it differently
-        return [];
-      }
-    }
+  // Get groups accessible by the current user
+  getAccessibleGroups(): Observable<Group[]> {
+    return this.http.get<Group[]>(`${this.apiUrl}/accessible`, {
+      headers: this.authService.getHeaders(),
+    });
   }
 
-  // Add a new group to local storage
-  addGroup(groupName: string): void {
-    const groups = this.getGroups();
-    const newGroup: Group = {
-      id: uuidv4(),
+  // Add a new group (Admin only)
+  addGroup(groupName: string): Observable<Group> {
+    const newGroup = {
       name: groupName,
       admins: [this.authService.getCurrentUser().id],
       channels: [],
-      joinRequests: []
+      joinRequests: [],
     };
-    groups.push(newGroup);
-    localStorage.setItem(this.GROUPS_KEY, JSON.stringify(groups));
+    return this.http.post<Group>(this.apiUrl, newGroup, {
+      headers: this.authService.getHeaders(),
+    });
   }
 
-  // Update a group in local storage
-  updateGroup(updatedGroup: Group): void {
-    const groups = this.getGroups();
-    const index = groups.findIndex(group => group.id === updatedGroup.id);
-    if (index !== -1) {
-      groups[index] = updatedGroup;
-      localStorage.setItem(this.GROUPS_KEY, JSON.stringify(groups));
-    }
+  // Fetch a specific group by ID
+  getGroupById(groupId: string): Observable<Group> {
+    return this.http.get<Group>(`${this.apiUrl}/${groupId}`, {
+      headers: this.authService.getHeaders(),
+    });
   }
 
-  // Delete a group from local storage
-  deleteGroup(groupId: string): void {
-    const groups = this.getGroups();
-    const updatedGroups = groups.filter(group => group.id !== groupId);
-    localStorage.setItem(this.GROUPS_KEY, JSON.stringify(updatedGroups));
+  // Update an existing group (Admin only)
+  updateGroup(updatedGroup: Group): Observable<Group> {
+    return this.http.put<Group>(
+      `${this.apiUrl}/${updatedGroup._id}`,
+      updatedGroup,
+      { headers: this.authService.getHeaders() }
+    );
+  }
+
+  // Delete a group (Admin only)
+  deleteGroup(groupId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${groupId}`, {
+      headers: this.authService.getHeaders(),
+    });
   }
 
   // Add a join request to a group
-  addJoinRequest(groupId: string, userId: string): void {
-    const groups = this.getGroups();
-    const group = groups.find(g => g.id === groupId);
-    if (group) {
-      group.joinRequests.push(userId);
-      localStorage.setItem(this.GROUPS_KEY, JSON.stringify(groups));
-    }
+  addJoinRequest(groupId: string, userId: string): Observable<Group> {
+    return this.http.post<Group>(
+      `${this.apiUrl}/${groupId}/join`,
+      { userId },
+      { headers: this.authService.getHeaders() }
+    );
   }
 
-  // Get pending join requests for a group
-  getJoinRequests(groupId: string): string[] {
-    const groups = this.getGroups();
-    const group = groups.find(g => g.id === groupId);
-    return group ? group.joinRequests : [];
+  // Get join requests for a specific group
+  getJoinRequests(groupId: string): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/${groupId}/joinRequests`, {
+      headers: this.authService.getHeaders(),
+    });
   }
 
-  // Approve a join request (add user to the group and remove the request)
-  approveJoinRequest(groupId: string, userId: string): void {
-    const groups = this.getGroups();
-    const group = groups.find(g => g.id === groupId);
-
-    if (group) {
-      group.joinRequests = group.joinRequests.filter(id => id !== userId);
-      localStorage.setItem(this.GROUPS_KEY, JSON.stringify(groups));
-
-      // Update the user's groups array directly in local storage
-      const usersData = localStorage.getItem(this.userService.USERS_KEY);
-      if (usersData) {
-        const users = JSON.parse(usersData);
-        const user = users.find((u: User) => u.id === userId);
-        if (user) {
-          user.groups.push(groupId);
-          localStorage.setItem(this.userService.USERS_KEY, JSON.stringify(users));
-        }
-      }
-    }
+  // Approve a join request (Admin only)
+  approveJoinRequest(groupId: string, userId: string): Observable<Group> {
+    return this.http.put<Group>(
+      `${this.apiUrl}/${groupId}/joinRequests/approve`,
+      { userId },
+      { headers: this.authService.getHeaders() }
+    );
   }
 
-  // Reject a join request (remove the request)
-  rejectJoinRequest(groupId: string, userId: string): void {
-    const groups = this.getGroups();
-    const group = groups.find(g => g.id === groupId);
-    if (group) {
-      group.joinRequests = group.joinRequests.filter(id => id !== userId);
-      localStorage.setItem(this.GROUPS_KEY, JSON.stringify(groups));
-    }
+  // Reject a join request (Admin only)
+  rejectJoinRequest(groupId: string, userId: string): Observable<Group> {
+    return this.http.put<Group>(
+      `${this.apiUrl}/${groupId}/joinRequests/reject`,
+      { userId },
+      { headers: this.authService.getHeaders() }
+    );
   }
 }

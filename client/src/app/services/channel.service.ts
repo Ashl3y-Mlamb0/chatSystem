@@ -1,63 +1,65 @@
 import { Injectable } from '@angular/core';
-import { v4 as uuidv4 } from 'uuid';
-
-interface Channel {
-  id: string;
-  name: string;
-  groupId: string;
-}
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Channel } from '../models/channel.model'; // Assuming you have a channel model defined
+import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment'; // Adjust path if necessary
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ChannelService {
-  private readonly CHANNELS_KEY = 'channels';
+  private apiUrl = `${environment.apiUrl}/channels`; // Base URL for channel management
 
-  // Get all channels from local storage
-  getChannels(): Channel[] {
-    const channelsData = localStorage.getItem(this.CHANNELS_KEY);
-    return channelsData ? JSON.parse(channelsData) as Channel[] : [];
+  constructor(private http: HttpClient, private authService: AuthService) {}
+
+  // Helper method to get headers with the authorization token
+  private getHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    });
   }
 
-  // Get channels by group ID
-  getChannelsByGroupId(groupId: string): Channel[] {
-    const allChannels = this.getChannels();
-    return allChannels.filter(channel => channel.groupId === groupId);
+  // Get all channels for a specific group by groupId
+  getChannelsByGroupId(groupId: string): Observable<Channel[]> {
+    return this.http.get<Channel[]>(`${this.apiUrl}/group/${groupId}`, {
+      headers: this.getHeaders(),
+    });
   }
 
-  // Get a channel by its ID
-  getChannelById(channelId: string): Channel | undefined {
-    const allChannels = this.getChannels();
-    return allChannels.find(channel => channel.id === channelId);
+  // Get a specific channel by its ID
+  getChannelById(channelId: string): Observable<Channel> {
+    return this.http.get<Channel>(`${this.apiUrl}/${channelId}`, {
+      headers: this.getHeaders(),
+    });
   }
 
-  // Add a new channel to local storage
-  addChannel(channelName: string, groupId: string): void {
-    const channels = this.getChannels();
-    const newChannel: Channel = {
-      id: uuidv4(), // Generate a simple ID
+  // Add a new channel
+  addChannel(channelName: string, groupId: string): Observable<Channel> {
+    const newChannel = {
       name: channelName,
-      groupId
+      groupId,
     };
-    channels.push(newChannel);
-    localStorage.setItem(this.CHANNELS_KEY, JSON.stringify(channels));
+    return this.http.post<Channel>(this.apiUrl, newChannel, {
+      headers: this.getHeaders(),
+    });
   }
 
-  // Update a channel in local storage
-  updateChannel(updatedChannel: Channel): void {
-    const channels = this.getChannels();
-    const index = channels.findIndex(channel => channel.id === updatedChannel.id);
-    if (index !== -1) {
-      channels[index] = updatedChannel;
-      localStorage.setItem(this.CHANNELS_KEY, JSON.stringify(channels));
-    }
+  // Update an existing channel
+  updateChannel(updatedChannel: Channel): Observable<Channel> {
+    return this.http.put<Channel>(
+      `${this.apiUrl}/${updatedChannel._id}`,
+      updatedChannel,
+      { headers: this.getHeaders() }
+    );
   }
 
-  // Delete a channel from local storage
-  deleteChannel(channelId: string): void {
-    const channels = this.getChannels();
-    const updatedChannels = channels.filter(channel => channel.id !== channelId);
-    localStorage.setItem(this.CHANNELS_KEY, JSON.stringify(updatedChannels));
+  // Delete a channel
+  deleteChannel(channelId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${channelId}`, {
+      headers: this.getHeaders(),
+    });
   }
-
 }
