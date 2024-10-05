@@ -69,7 +69,8 @@ export class AdminDashboardComponent implements OnInit {
   createGroup() {
     if (this.newGroupName.trim() !== '') {
       this.groupService.addGroup(this.newGroupName).subscribe({
-        next: (group: Group) => {
+        next: (res: any) => {
+          const group = res.group;
           this.groups.push(group); // Add the new group to the list
           this.newGroupName = ''; // Clear the input field
         },
@@ -87,7 +88,8 @@ export class AdminDashboardComponent implements OnInit {
   saveGroup() {
     if (this.editingGroup) {
       this.groupService.updateGroup(this.editingGroup).subscribe({
-        next: (updatedGroup: Group) => {
+        next: (res: any) => {
+          const updatedGroup = res.updatedGroup;
           const index = this.groups.findIndex(
             (g) => g._id === updatedGroup._id
           );
@@ -126,7 +128,8 @@ export class AdminDashboardComponent implements OnInit {
       this.channelService
         .addChannel(this.newChannelName, this.selectedGroup._id)
         .subscribe({
-          next: (channel: Channel) => {
+          next: (res: any) => {
+            const channel = res.channel;
             this.channels.push(channel); // Add the new channel to the list
             this.newChannelName = ''; // Clear the input field
           },
@@ -144,7 +147,9 @@ export class AdminDashboardComponent implements OnInit {
   saveChannel() {
     if (this.editingChannel) {
       this.channelService.updateChannel(this.editingChannel).subscribe({
-        next: (updatedChannel: Channel) => {
+        next: (res: any) => {
+          const updatedChannel = res.updatedChannel;
+          console.log('updated', updatedChannel);
           const index = this.channels.findIndex(
             (c) => c._id === updatedChannel._id
           );
