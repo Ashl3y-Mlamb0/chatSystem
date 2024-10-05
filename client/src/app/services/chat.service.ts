@@ -4,14 +4,16 @@ import { environment } from '../../environments/environment'; // Your backend UR
 import { AuthService } from './auth.service'; // AuthService for fetching token
 import { Observable } from 'rxjs';
 import { Message } from '../models/message.model';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ChatService {
   private socket: Socket; // The socket instance
+  private apiUrl = `${environment.apiUrl}/messages`; // Base URL for group management
 
-  constructor(private authService: AuthService) {
+  constructor(private http: HttpClient, private authService: AuthService) {
     // Get the auth token from AuthService or localStorage
     const token = localStorage.getItem('authToken');
 
@@ -19,13 +21,10 @@ export class ChatService {
     const config: SocketIoConfig = {
       url: environment.socketUrl, // Set the socket backend URL
       options: {
-        transportOptions: {
-          polling: {
-            extraHeaders: {
-              Authorization: `Bearer ${token}`, // Pass the token as an authorization header
-            },
-          },
+        auth: {
+          token: token, // Pass the token in the auth object for the handshake
         },
+        transports: ['websocket'], // Ensure WebSocket transport is used
       },
     };
 
@@ -49,6 +48,17 @@ export class ChatService {
   // Send a message
   sendMessage(channelId: string, messageContent: string) {
     this.socket.emit('sendMessage', { channelId, content: messageContent });
+  }
+
+  // Method to update a message by ID
+  updateMessage(messageId: string, content: string) {
+    return this.http.put<Message>(
+      `${this.apiUrl}/${messageId}`,
+      { content },
+      {
+        headers: this.authService.getHeaders(),
+      }
+    );
   }
 
   // Fetch previous messages when a channel is selected

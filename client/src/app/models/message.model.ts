@@ -1,7 +1,12 @@
+export interface Sender {
+  username: string;
+  avatar: string;
+}
+
 export interface Message {
-    id: string;
-    channelId: string;
-    sender: string;
-    content: string;
-    timestamp: Date;
+  _id: string;
+  channelId: string;
+  sender: Sender;
+  content: string;
+  timestamp: Date;
 }

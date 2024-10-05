@@ -1,51 +1,54 @@
 <div class="chat-container">
-    <div class="sidebar">
-      <h3>Groups</h3>
-      <select [(ngModel)]="selectedGroup" (ngModelChange)="onGroupSelect()">
-        <option *ngFor="let group of groups" [ngValue]="group">
-          {{ group.name }}
-        </option>
-      </select>
-  
-      <h3 *ngIf="selectedGroup">Channels</h3>
-      <ul *ngIf="selectedGroup">
-        <li
-          *ngFor="let channel of channels"
-          (click)="onChannelSelect(channel)"
-          [class.selected]="channel === selectedChannel"
-        >
-          {{ channel.name }}
-        </li>
-      </ul>
-    </div>
-  
-    <div class="chat-area">
-      <div class="messages" #messagesContainer>
-        <div *ngFor="let message of messages" class="message">
-          <div *ngIf="editingMessage && editingMessage.id === message.id">
-            <!-- Edit mode for the message -->
-            <input [(ngModel)]="editingMessage.content" placeholder="Edit your message..." />
-            <button (click)="saveMessage()">Save</button>
-            <button (click)="cancelMessageEdit()">Cancel</button>
+  <div class="sidebar">
+    <h3>Groups</h3>
+    <select [(ngModel)]="selectedGroup" (ngModelChange)="onGroupSelect()">
+      <option *ngFor="let group of groups" [ngValue]="group">
+        {{ group.name }}
+      </option>
+    </select>
+
+    <h3 *ngIf="selectedGroup">Channels</h3>
+    <ul *ngIf="selectedGroup">
+      <li
+        *ngFor="let channel of channels"
+        (click)="onChannelSelect(channel)"
+        [class.selected]="channel === selectedChannel"
+      >
+        {{ channel.name }}
+      </li>
+    </ul>
+  </div>
+
+  <div class="chat-area">
+    <div class="messages" #messagesContainer>
+      <div *ngFor="let message of messages" class="message">
+        <div *ngIf="editingMessage && editingMessage._id === message._id">
+          <!-- Edit mode for the message -->
+          <input [(ngModel)]="editingMessage.content" placeholder="Edit your message..." />
+          <button (click)="saveMessage()">Save</button>
+          <button (click)="cancelMessageEdit()">Cancel</button>
+        </div>
+        <div *ngIf="!editingMessage || editingMessage._id !== message._id" class="message-row">
+          <!-- Normal display mode -->
+          <div class="message-header">
+            <img [src]="message.sender.avatar" alt="Avatar" class="avatar" />
+            <span class="sender">{{ message.sender.username }}:</span>
+            <span class="message-content">{{ message.content }}</span>
           </div>
-          <div *ngIf="!editingMessage || editingMessage.id !== message.id">
-            <!-- Normal display mode -->
-            <span class="sender">{{ message.sender }}:</span> {{ message.content }}
-            <button (click)="editMessage(message)">Edit</button>
-          </div>
+          <button class="edit-button" (click)="editMessage(message)">Edit</button> <!-- Moved the edit button -->
         </div>
       </div>
-  
-      <div class="input-area">
-        <input
-          type="text"
-          [(ngModel)]="newMessage"
-          placeholder="Type your message..."
-          (keyup.enter)="sendMessage()"
-          [disabled]="!selectedChannel"
-        />
-        <button (click)="sendMessage()" [disabled]="!selectedChannel">Send</button>
-      </div>
+    </div>
+
+    <div class="input-area">
+      <input
+        type="text"
+        [(ngModel)]="newMessage"
+        placeholder="Type your message..."
+        (keyup.enter)="sendMessage()"
+        [disabled]="!selectedChannel"
+      />
+      <button (click)="sendMessage()" [disabled]="!selectedChannel">Send</button>
     </div>
   </div>
-  
+</div>

@@ -15,6 +15,7 @@ import { Message } from '../models/message.model';
 import { ActivatedRoute } from '@angular/router';
 import { Channel } from '../models/channel.model';
 import { Subscription } from 'rxjs';
+import { Group } from '../models/group.model';
 
 @Component({
   selector: 'app-chat',
@@ -24,10 +25,10 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./chat.component.css'],
 })
 export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
-  selectedGroup: any = null;
-  selectedChannel: any = null;
-  groups: any[] = [];
-  channels: any[] = [];
+  selectedGroup: Group | null = null;
+  selectedChannel: Channel | null = null;
+  groups: Group[] = [];
+  channels: Channel[] = [];
   messages: Message[] = [];
   newMessage: string = '';
   editingMessage: Message | null = null; // Track the message being edited
@@ -45,6 +46,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   ) {}
 
   ngOnInit() {
+    // Test the socket connection
+    // this.checkSocketConnection();
     // Subscribe to route changes and handle group/channel selection
     this.route.paramMap.subscribe((params) => {
       const groupId = params.get('groupId');
@@ -86,7 +89,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
       this.previousMessageSubscription.unsubscribe();
     }
     if (this.selectedChannel) {
-      this.chatService.leaveChannel(this.selectedChannel.id); // Leave the current channel
+      this.chatService.leaveChannel(this.selectedChannel._id); // Leave the current channel
     }
   }
 
@@ -100,13 +103,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   handleGroupAndChannelSelection(groupId: string, channelId: string) {
-    this.selectedGroup = this.groups.find((group) => group.id === groupId);
+    this.selectedGroup =
+      this.groups.find((group) => group._id === groupId) || null;
     if (!this.selectedGroup) return;
 
     this.fetchChannels().then(() => {
-      this.selectedChannel = this.channels.find(
-        (channel) => channel.id === channelId
-      );
+      this.selectedChannel =
+        this.channels.find((channel) => channel._id === channelId) || null;
       if (!this.selectedChannel) return;
 
       this.onChannelSelect(this.selectedChannel);
@@ -114,7 +117,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   handleGroupSelection(groupId: string) {
-    this.selectedGroup = this.groups.find((group) => group.id === groupId);
+    this.selectedGroup =
+      this.groups.find((group) => group._id === groupId) || null;
+
     if (!this.selectedGroup) return;
 
     this.fetchChannels().then(() => {
@@ -128,7 +133,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   async fetchChannels() {
     if (this.selectedGroup) {
       const channels = await this.channelService
-        .getChannelsByGroupId(this.selectedGroup.id)
+        .getChannelsByGroupId(this.selectedGroup._id)
         .toPromise();
       this.channels = channels || []; // Ensure channels is an empty array if undefined
     }
@@ -143,7 +148,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // If a previous channel was selected, leave it
     if (this.selectedChannel) {
-      this.chatService.leaveChannel(this.selectedChannel.id); // Leave the previous channel
+      this.chatService.leaveChannel(this.selectedChannel._id); // Leave the previous channel
     }
 
     this.selectedChannel = channel;
@@ -152,7 +157,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subscribeToPreviousMessages(); // Fetch previous messages
 
     // Join the newly selected channel
-    this.chatService.joinChannel(this.selectedChannel.id);
+    this.chatService.joinChannel(this.selectedChannel._id);
   }
 
   // Subscribe to incoming real-time messages for the selected channel
@@ -166,6 +171,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         .listenForNewMessages()
         .subscribe({
           next: (message: Message) => {
+            console.log(message);
             this.messages.push(message);
             this.scrollToBottom(); // Scroll to bottom when a new message arrives
           },
@@ -188,7 +194,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         .getPreviousMessages()
         .subscribe({
           next: (messages: Message[]) => {
-            this.messages = [...messages, ...this.messages]; // Prepend previous messages to current ones
+            this.messages = [...this.messages, ...messages.reverse()]; // Reverse messages before appending
             this.scrollToBottom(); // Scroll to bottom after fetching previous messages
           },
           error: (err: any) =>
@@ -203,7 +209,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     this.messageDebounce = true;
 
     if (this.newMessage.trim() !== '' && this.selectedChannel) {
-      this.chatService.sendMessage(this.selectedChannel.id, this.newMessage);
+      this.chatService.sendMessage(this.selectedChannel._id, this.newMessage);
       this.newMessage = ''; // Clear the input field
     }
 
@@ -218,8 +224,25 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   // Save the edited message
   saveMessage() {
     if (this.editingMessage) {
-      // Implement save logic via service or API call here
-      this.editingMessage = null; // Clear edit mode after saving
+      const messageId = this.editingMessage._id; // Assuming message has _id
+      const updatedContent = this.editingMessage.content;
+
+      // Call the service to update the message
+      this.chatService.updateMessage(messageId, updatedContent).subscribe({
+        next: (res: any) => {
+          const updatedMessage = res.updatedMessage;
+          // Find the message in the local array and update its content
+          const index = this.messages.findIndex((msg) => msg._id === messageId);
+          if (index !== -1) {
+            this.messages[index] = updatedMessage;
+          }
+          this.editingMessage = null; // Exit edit mode after saving
+        },
+        error: (err) => {
+          console.error('Error updating message:', err);
+          alert('Failed to update message');
+        },
+      });
     }
   }
 
