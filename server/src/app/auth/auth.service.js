@@ -56,6 +56,7 @@ const authService = {
       message: "Login successful",
       token, // Return the JWT token
       user: {
+        id: user._id,
         username: user.username,
         email: user.email,
         roles: user.roles, // Return user roles if available

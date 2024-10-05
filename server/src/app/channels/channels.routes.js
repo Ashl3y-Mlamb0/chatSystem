@@ -78,6 +78,7 @@ router.put(
       }
       res.json({ message: "Channel updated successfully", updatedChannel });
     } catch (err) {
+      console.error(err);
       res.status(500).json({ error: err.message });
     }
   }
