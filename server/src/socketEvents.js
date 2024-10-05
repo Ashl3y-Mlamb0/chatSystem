@@ -90,6 +90,7 @@ module.exports = function (io, socket) {
 
       // Broadcast the new message to the channel
       io.to(channelId).emit("receiveMessage", {
+        _id: newMessage._id,
         content: newMessage.content,
         sender: { username: user.username, avatar: user.avatar },
       });
