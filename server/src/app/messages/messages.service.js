@@ -20,10 +20,25 @@ const messagesService = {
     return message;
   },
 
+  // Update message by ID
+  updateMessage: async (messageId, content) => {
+    const updatedMessage = await Message.findByIdAndUpdate(
+      messageId,
+      { content },
+      { new: true }
+    ).populate("sender", "username avatar"); // Populate sender with username and avatar fields
+
+    if (!updatedMessage) {
+      throw new Error("Message not found");
+    }
+
+    return updatedMessage;
+  },
+
   // Get all messages for a specific channel
   getMessagesByChannel: async (channelId) => {
     const messages = await Message.find({ channel: channelId })
-      .populate("sender", "username") // Populate sender details
+      .populate("sender", "username avatar")
       .sort({ createdAt: 1 }); // Sort by creation date
     return messages;
   },

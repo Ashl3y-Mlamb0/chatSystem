@@ -40,12 +40,34 @@ router.get(
   }
 );
 
+// PUT /api/messages/:messageId - Update a message (Only authenticated users)
+router.put(
+  "/:messageId",
+  authMiddleware.verifyToken, // Ensure the user is authenticated
+  authMiddleware.requireRole("groupAdmin"), // Only Group Admins and Super Admins
+  authMiddleware.isGroupAdminForMessage, // Check if the user is a group admin for the channel's group
+  async (req, res) => {
+    const { messageId } = req.params;
+    const { content } = req.body;
+
+    try {
+      const updatedMessage = await messagesService.updateMessage(
+        messageId,
+        content
+      );
+      res.json({ message: "Message updated successfully", updatedMessage });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // DELETE /api/messages/:messageId - Delete a message (Only Super Admins or Group Admins of the channel's group)
 router.delete(
   "/:messageId",
   authMiddleware.verifyToken,
   authMiddleware.requireRole("groupAdmin"), // Only Group Admins and Super Admins
-  authMiddleware.isGroupAdminForChannel, // Check if the user is a group admin for the channel's group
+  authMiddleware.isGroupAdminForMessage, // Check if the user is a group admin for the channel's group
   async (req, res) => {
     const { messageId } = req.params;
 

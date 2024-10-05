@@ -2,6 +2,7 @@ const authService = require("../app/auth/auth.service");
 const User = require("../models/User");
 const Group = require("../models/Group");
 const Channel = require("../models/Channel");
+const Message = require("../models/Message");
 
 const authMiddleware = {
   // Middleware to verify JWT token and fetch user from the database
@@ -117,6 +118,50 @@ const authMiddleware = {
       return res.status(403).json({
         error:
           "Forbidden: You can only manage channels in groups you are an admin of.",
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: err.message });
+    }
+  },
+
+  // Middleware to check if the user is a Group Admin for the group related to the message
+  isGroupAdminForMessage: async (req, res, next) => {
+    const messageId = req.params.messageId || req.body.messageId;
+
+    try {
+      // Fetch the message and populate the channel and group
+      const message = await Message.findById(messageId).populate({
+        path: "channel", // Assuming message has a reference to the channel
+        populate: {
+          path: "group", // And the channel has a reference to the group
+        },
+      });
+
+      if (!message) {
+        return res.status(404).json({ error: "Message not found" });
+      }
+
+      const channel = message.channel;
+      const group = channel.group;
+
+      if (!group) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+
+      // Allow Super Admins to bypass this check
+      if (req.user && req.user.roles.includes("superAdmin")) {
+        return next(); // Super Admins can manage anything
+      }
+
+      // Check if the user is listed as an admin in the group associated with the message
+      if (group.admins.includes(req.user._id)) {
+        return next(); // User is an admin of this group, proceed
+      }
+
+      return res.status(403).json({
+        error:
+          "Forbidden: You can only manage messages in groups you are an admin of.",
       });
     } catch (err) {
       console.error(err);
