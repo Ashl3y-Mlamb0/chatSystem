@@ -1,6 +1,7 @@
 const authService = require("../app/auth/auth.service");
 const User = require("../models/User");
 const Group = require("../models/Group");
+const Channel = require("../models/Channel");
 
 const authMiddleware = {
   // Middleware to verify JWT token and fetch user from the database
@@ -39,6 +40,7 @@ const authMiddleware = {
       // Proceed to the next middleware or route handler
       next();
     } catch (err) {
+      console.error(err);
       return res.status(401).json({ error: "Invalid or expired token" });
     }
   },
@@ -85,6 +87,7 @@ const authMiddleware = {
         error: "Forbidden: You can only manage groups you are an admin of.",
       });
     } catch (err) {
+      console.error(err);
       return res.status(500).json({ error: err.message });
     }
   },
@@ -116,6 +119,7 @@ const authMiddleware = {
           "Forbidden: You can only manage channels in groups you are an admin of.",
       });
     } catch (err) {
+      console.error(err);
       return res.status(500).json({ error: err.message });
     }
   },
