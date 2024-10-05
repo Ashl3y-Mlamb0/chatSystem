@@ -5,7 +5,10 @@ const userSchema = new mongoose.Schema(
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    avatar: { type: String }, // Path to profile image
+    avatar: {
+      type: String,
+      default: "/avatar_default.png", // Default avatar image
+    },
     roles: {
       type: String,
       default: "user",
