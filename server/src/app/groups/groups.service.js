@@ -1,14 +1,24 @@
 const Group = require("../../models/Group");
+const User = require("../../models/User"); // Import the User model
 
 const groupsService = {
   // Create a new group and set the creator as admin
   createGroup: async (name, description, creatorId) => {
+    // Create a new group
     const group = new Group({
       name,
       description,
       admins: [creatorId], // Add the creator to the admins array
     });
+
+    // Save the new group
     await group.save();
+
+    // Add the newly created group to the creator's `groups` array
+    await User.findByIdAndUpdate(creatorId, {
+      $addToSet: { groups: group._id }, // Use $addToSet to prevent duplicates
+    });
+
     return group;
   },
 
