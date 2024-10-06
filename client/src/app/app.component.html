@@ -1,29 +1,39 @@
 <nav class="navbar">
-    <div class="container">
-        <a routerLink="/" class="logo">Chat App</a>
+  <div class="container">
+    <a routerLink="/" class="logo">Chat App</a>
 
-        <div class="center-content" *ngIf="authService.getCurrentUser()">
-            <span class="username">Welcome, {{ authService.getCurrentUser().username }}</span>
-        </div>
-
-        <ul class="nav-links">
-            @if (authService.getCurrentUser()) {
-            <li><a routerLink="/chat">Chat</a></li>
-            <li>
-                <a routerLink="/groups">Groups</a>
-            </li>
-
-            <li *ngIf="authService.hasRole('groupAdmin') || authService.hasRole('superAdmin')">
-                <a routerLink="/admin">Admin</a>
-            </li>
-
-            <li><a (click)="logout()">Logout</a></li>
-            } @else {
-            <li><a routerLink="/login">Login</a></li>
-            <li><a routerLink="/signup">Sign Up</a></li>
-            }
-        </ul>
+    <div class="center-content" *ngIf="authService.getCurrentUser()">
+      <span class="username"
+        >Welcome, {{ authService.getCurrentUser().username }}</span
+      >
     </div>
+
+    <ul class="nav-links">
+      @if (authService.getCurrentUser()) {
+      <li><a routerLink="/chat">Chat</a></li>
+      <li>
+        <a routerLink="/groups">Groups</a>
+      </li>
+
+      <li>
+        <a routerLink="/profile">Profile</a>
+      </li>
+
+      <li
+        *ngIf="
+          authService.hasRole('groupAdmin') || authService.hasRole('superAdmin')
+        "
+      >
+        <a routerLink="/admin">Admin</a>
+      </li>
+
+      <li><a (click)="logout()">Logout</a></li>
+      } @else {
+      <li><a routerLink="/login">Login</a></li>
+      <li><a routerLink="/signup">Sign Up</a></li>
+      }
+    </ul>
+  </div>
 </nav>
 
 <router-outlet></router-outlet>
