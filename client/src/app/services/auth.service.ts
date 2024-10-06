@@ -1,17 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { environment } from '../../environments/environment'; // Assuming you have an environment file with the API URL
+import { Observable, throwError } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators'; // Add switchMap for chaining
+import { environment } from '../../environments/environment';
+import { jwtDecode } from 'jwt-decode';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly CURRENT_USER_KEY = 'currentUser'; // Key for storing the current user in local storage
-  private readonly TOKEN_KEY = 'authToken'; // Key for storing the JWT token
-
-  private apiUrl = environment.apiUrl; // The base URL for your backend API
+  private readonly CURRENT_USER_KEY = 'currentUser';
+  private readonly TOKEN_KEY = 'authToken';
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
@@ -28,19 +28,28 @@ export class AuthService {
             JSON.stringify(response.user)
           );
           return response.user;
+        }),
+        catchError((error) => {
+          console.error('Login failed', error);
+          return throwError(() => new Error('Login failed. Please try again.'));
         })
       );
   }
 
-  // Register a new user
+  // Register a new user and auto-login after successful registration
   signup(username: string, email: string, password: string): Observable<any> {
     return this.http
       .post<any>(`${this.apiUrl}/auth/register`, { username, email, password })
       .pipe(
-        map((response) => {
-          // You may automatically log the user in after signup
-          this.authenticate(username, password).subscribe();
-          return response;
+        switchMap((response) => {
+          // After signup, automatically log the user in
+          return this.authenticate(username, password);
+        }),
+        catchError((error) => {
+          console.error('Signup failed', error);
+          return throwError(
+            () => new Error('Signup failed. Please try again.')
+          );
         })
       );
   }
@@ -51,9 +60,22 @@ export class AuthService {
     return userData ? JSON.parse(userData) : null;
   }
 
-  // Get the JWT token from local storage
+  // Get the JWT token from local storage and check for expiry
   getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    if (token && !this.isTokenExpired(token)) {
+      return token;
+    } else {
+      this.logout(); // Auto logout if token expired
+      return null;
+    }
+  }
+
+  // Check if the JWT token is expired
+  private isTokenExpired(token: string): boolean {
+    const decoded: any = jwtDecode(token);
+    const expiry = decoded.exp;
+    return expiry * 1000 < Date.now(); // Check if the token is expired
   }
 
   // Logout the user (clear local storage)

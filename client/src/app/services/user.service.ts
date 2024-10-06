@@ -6,7 +6,7 @@ import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment'; // Adjust path as necessary
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class UserService {
   private apiUrl = `${environment.apiUrl}/users`; // Base URL for user management
@@ -17,8 +17,7 @@ export class UserService {
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${token}`,
     });
   }
 
@@ -29,28 +28,32 @@ export class UserService {
 
   // Get the current logged-in user's profile
   getCurrentUser(): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/me`, { headers: this.getHeaders() });
+    return this.http.get<User>(`${this.apiUrl}/me`, {
+      headers: this.getHeaders(),
+    });
   }
 
   // Update the current user's profile
   updateCurrentUser(updatedUser: User): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/me`, updatedUser, { headers: this.getHeaders() });
+    return this.http.put<User>(`${this.apiUrl}/me`, updatedUser, {
+      headers: this.getHeaders(),
+    });
   }
 
-  // Update the current user's avatar (profile picture)
+  // Update the user's avatar (profile picture)
   updateAvatar(avatarFile: File): Observable<User> {
     const formData = new FormData();
-    formData.append('avatar', avatarFile);
+    formData.append('avatar', avatarFile); // Attach the avatar file
 
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.authService.getToken()}`
+    return this.http.put<User>(`${this.apiUrl}/me/avatar`, formData, {
+      headers: this.getHeaders(),
     });
-
-    return this.http.put<User>(`${this.apiUrl}/me/avatar`, formData, { headers });
   }
 
   // Get a specific user by their ID (Super Admin only)
   getUserById(userId: string): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/${userId}`, { headers: this.getHeaders() });
+    return this.http.get<User>(`${this.apiUrl}/${userId}`, {
+      headers: this.getHeaders(),
+    });
   }
 }

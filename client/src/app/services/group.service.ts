@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Group } from '../models/group.model';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment'; // Adjust path if necessary
+import { User } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root',
@@ -13,7 +14,7 @@ export class GroupService {
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
-  // Get all groups from the server (Admin only)
+  // Get all groups from the server
   getGroups(): Observable<Group[]> {
     return this.http.get<Group[]>(this.apiUrl, {
       headers: this.authService.getHeaders(),
@@ -64,35 +65,10 @@ export class GroupService {
   }
 
   // Add a join request to a group
-  addJoinRequest(groupId: string, userId: string): Observable<Group> {
+  addJoinRequest(groupId: string, user: User): Observable<Group> {
     return this.http.post<Group>(
       `${this.apiUrl}/${groupId}/join`,
-      { userId },
-      { headers: this.authService.getHeaders() }
-    );
-  }
-
-  // Get join requests for a specific group
-  getJoinRequests(groupId: string): Observable<string[]> {
-    return this.http.get<string[]>(`${this.apiUrl}/${groupId}/joinRequests`, {
-      headers: this.authService.getHeaders(),
-    });
-  }
-
-  // Approve a join request (Admin only)
-  approveJoinRequest(groupId: string, userId: string): Observable<Group> {
-    return this.http.put<Group>(
-      `${this.apiUrl}/${groupId}/joinRequests/approve`,
-      { userId },
-      { headers: this.authService.getHeaders() }
-    );
-  }
-
-  // Reject a join request (Admin only)
-  rejectJoinRequest(groupId: string, userId: string): Observable<Group> {
-    return this.http.put<Group>(
-      `${this.apiUrl}/${groupId}/joinRequests/reject`,
-      { userId },
+      { user },
       { headers: this.authService.getHeaders() }
     );
   }
