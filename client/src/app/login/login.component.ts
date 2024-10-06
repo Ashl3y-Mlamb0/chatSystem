@@ -9,14 +9,14 @@ import { AuthService } from '../services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css']
+  styleUrls: ['./login.component.css'],
 })
 export class LoginComponent {
   username = '';
   password = '';
-  errorMessage = '';  // To display any error message
+  errorMessage = ''; // To display any error message
 
-  constructor(private authService: AuthService, private router: Router) { }
+  constructor(private authService: AuthService, private router: Router) {}
 
   onLogin() {
     this.authService.authenticate(this.username, this.password).subscribe({
@@ -28,7 +28,7 @@ export class LoginComponent {
         // Handle error, such as invalid credentials
         this.errorMessage = 'Invalid username or password. Please try again.';
         console.error('Login error:', err);
-      }
+      },
     });
   }
 }
