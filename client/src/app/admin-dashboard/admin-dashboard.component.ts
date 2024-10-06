@@ -7,6 +7,7 @@ import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
 import { Group } from '../models/group.model';
 import { Channel } from '../models/channel.model';
+import { User } from '../models/user.model';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -17,13 +18,12 @@ import { Channel } from '../models/channel.model';
 })
 export class AdminDashboardComponent implements OnInit {
   groups: Group[] = [];
-  selectedGroup: Group | null = null;
+  selectedGroup: any | null = null;
   channels: Channel[] = [];
   newGroupName: string = '';
   newChannelName: string = '';
   editingGroup: Group | null = null; // Track the group being edited
   editingChannel: Channel | null = null; // Track the channel being edited
-  joinRequests: { groupId: string; userId: string }[] = [];
 
   constructor(
     private groupService: GroupService,
@@ -44,8 +44,8 @@ export class AdminDashboardComponent implements OnInit {
         if (this.groups.length > 0) {
           this.selectedGroup = this.groups[0]; // Select the first group by default
           this.fetchChannels();
-          this.fetchJoinRequests(); // Fetch join requests when a group is selected
         }
+        console.log(this.groups);
       },
       error: (err) => console.error('Error fetching groups', err),
     });
@@ -149,7 +149,6 @@ export class AdminDashboardComponent implements OnInit {
       this.channelService.updateChannel(this.editingChannel).subscribe({
         next: (res: any) => {
           const updatedChannel = res.updatedChannel;
-          console.log('updated', updatedChannel);
           const index = this.channels.findIndex(
             (c) => c._id === updatedChannel._id
           );
@@ -182,46 +181,37 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  // Fetch pending join requests for the selected group
-  fetchJoinRequests() {
+  // Approve a join request directly from the selectedGroup object
+  approveJoinRequest(user: User) {
     if (this.selectedGroup) {
-      this.groupService.getJoinRequests(this.selectedGroup._id).subscribe({
-        next: (requests: string[]) => {
-          this.joinRequests = requests.map((userId: string) => ({
-            groupId: this.selectedGroup!._id,
-            userId: userId,
-          }));
+      this.selectedGroup.joinRequestsAction = {
+        action: 'approve',
+        userId: user._id,
+      };
+      this.groupService.updateGroup(this.selectedGroup).subscribe({
+        next: (updatedGroup: Group) => {
+          // Update the joinRequests array by removing the approved user
+          this.selectedGroup!.joinRequests = updatedGroup.joinRequests;
         },
-        error: (err) => console.error('Error fetching join requests', err),
+        error: (err) => console.error('Error approving join request', err),
       });
     }
   }
 
-  // Approve a join request
-  approveJoinRequest(request: { groupId: string; userId: string }) {
-    this.groupService
-      .approveJoinRequest(request.groupId, request.userId)
-      .subscribe({
-        next: () => {
-          this.joinRequests = this.joinRequests.filter(
-            (r) => r.userId !== request.userId
-          ); // Remove the request from the list
+  // Reject a join request directly from the selectedGroup object
+  rejectJoinRequest(user: User) {
+    if (this.selectedGroup) {
+      this.selectedGroup.joinRequestsAction = {
+        action: 'reject',
+        userId: user._id,
+      };
+      this.groupService.updateGroup(this.selectedGroup).subscribe({
+        next: (updatedGroup: Group) => {
+          // Update the joinRequests array by removing the approved user
+          this.selectedGroup!.joinRequests = updatedGroup.joinRequests;
         },
         error: (err) => console.error('Error approving join request', err),
       });
-  }
-
-  // Reject a join request
-  rejectJoinRequest(request: { groupId: string; userId: string }) {
-    this.groupService
-      .rejectJoinRequest(request.groupId, request.userId)
-      .subscribe({
-        next: () => {
-          this.joinRequests = this.joinRequests.filter(
-            (r) => r.userId !== request.userId
-          ); // Remove the request from the list
-        },
-        error: (err) => console.error('Error rejecting join request', err),
-      });
+    }
   }
 }

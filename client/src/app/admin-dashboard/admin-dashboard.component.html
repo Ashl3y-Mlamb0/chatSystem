@@ -3,65 +3,102 @@
 
   <!-- Group Management Section -->
   <h3>Group Management</h3>
-  <select [(ngModel)]="selectedGroup" (ngModelChange)="fetchChannels(); fetchJoinRequests()">
-    <option *ngFor="let group of groups" [ngValue]="group">
-      {{ group.name }}
-    </option>
-  </select>
+  <div class="group-management">
+    <select [(ngModel)]="selectedGroup" (ngModelChange)="fetchChannels()">
+      <option *ngFor="let group of groups" [ngValue]="group">
+        {{ group.name }}
+      </option>
+    </select>
 
-  <!-- Create New Group Section (Visible for Admins) -->
-  <div *ngIf="authService.hasRole('groupAdmin') || authService.hasRole('superAdmin')">
-    <h4>Create New Group</h4>
-    <input type="text" [(ngModel)]="newGroupName" placeholder="Group Name">
-    <button (click)="createGroup()">Create</button>
+    <!-- Create New Group Section (Visible for Admins) -->
+    <div
+      *ngIf="
+        authService.hasRole('groupAdmin') || authService.hasRole('superAdmin')
+      "
+    >
+      <h4>Create New Group</h4>
+      <input type="text" [(ngModel)]="newGroupName" placeholder="Group Name" />
+      <button (click)="createGroup()">Create</button>
+    </div>
   </div>
 
   <!-- Group Editing Section -->
-  <div *ngIf="editingGroup">
+  <div class="group-editing" *ngIf="editingGroup">
     <h4>Edit Group: {{ editingGroup.name }}</h4>
-    <input type="text" [(ngModel)]="editingGroup.name" placeholder="New Group Name">
+    <input
+      type="text"
+      [(ngModel)]="editingGroup.name"
+      placeholder="New Group Name"
+    />
     <button (click)="saveGroup()">Save</button>
-    <button (click)="editingGroup = null">Cancel</button>
+    <button (click)="cancelGroupEdit()">Cancel</button>
   </div>
 
   <!-- Channel Management Section (Only if a group is selected) -->
-  <div *ngIf="selectedGroup">
+  <div *ngIf="selectedGroup" class="channel-management">
     <h3>Channel Management for {{ selectedGroup.name }}</h3>
-    
+
     <!-- Channel List with Edit/Delete Options -->
-    <ul>
+    <ul class="channel-list">
       <li *ngFor="let channel of channels">
-        <div *ngIf="!editingChannel || editingChannel._id !== channel._id">
-          {{ channel.name }}
-          <button (click)="editChannel(channel)">Edit</button>
-          <button (click)="deleteChannel(channel._id)">Delete</button>
+        <div
+          *ngIf="!editingChannel || editingChannel._id !== channel._id"
+          class="channel-item"
+        >
+          <span class="channel-name">{{ channel.name }}</span>
+          <div class="channel-actions">
+            <button (click)="editChannel(channel)">Edit</button>
+            <button (click)="deleteChannel(channel._id)">Delete</button>
+          </div>
         </div>
-        
+
         <!-- Channel Editing Section -->
-        <div *ngIf="editingChannel && editingChannel._id === channel._id">
-          <input type="text" [(ngModel)]="editingChannel.name" placeholder="New Channel Name">
+        <div
+          *ngIf="editingChannel && editingChannel._id === channel._id"
+          class="channel-editing"
+        >
+          <input
+            type="text"
+            [(ngModel)]="editingChannel.name"
+            placeholder="New Channel Name"
+          />
           <button (click)="saveChannel()">Save</button>
-          <button (click)="editingChannel = null">Cancel</button>
+          <button (click)="cancelChannelEdit()">Cancel</button>
         </div>
       </li>
     </ul>
 
     <!-- Create New Channel Section -->
-    <div>
+    <div class="create-channel">
       <h4>Create New Channel</h4>
-      <input type="text" [(ngModel)]="newChannelName" placeholder="Channel Name">
+      <input
+        type="text"
+        [(ngModel)]="newChannelName"
+        placeholder="Channel Name"
+      />
       <button (click)="createChannel()">Create</button>
     </div>
 
     <!-- Pending Join Requests Section -->
     <h3>Pending Join Requests for {{ selectedGroup.name }}</h3>
-    <ul *ngIf="joinRequests.length > 0">
-      <li *ngFor="let request of joinRequests">
-        {{ (userService.getUserById(request.userId) | async)?.username }}
-        <button (click)="approveJoinRequest(request)">Approve</button>
-        <button (click)="rejectJoinRequest(request)">Reject</button>
+    <ul
+      class="join-requests"
+      *ngIf="
+        selectedGroup?.joinRequests && selectedGroup.joinRequests.length > 0
+      "
+    >
+      <li *ngFor="let user of selectedGroup.joinRequests">
+        {{ user.username || "Unknown User" }}
+        <button (click)="approveJoinRequest(user)">Approve</button>
+        <button (click)="rejectJoinRequest(user)">Reject</button>
       </li>
     </ul>
-    <p *ngIf="joinRequests.length === 0">No pending join requests.</p>
+    <p
+      *ngIf="
+        selectedGroup?.joinRequests && selectedGroup.joinRequests.length === 0
+      "
+    >
+      No pending join requests.
+    </p>
   </div>
 </div>
