@@ -10,4 +10,5 @@ export interface Message {
   sender: Sender;
   content: string;
   timestamp: Date;
+  imageUrl: string;
 }

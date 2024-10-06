@@ -1,7 +1,22 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
 const messagesService = require("./messages.service");
 const authMiddleware = require("../../middleware/auth.middleware");
+
+// Configure multer for image storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Set the destination directory for uploads
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname)); // Create a unique file name
+  },
+});
+
+const upload = multer({ storage: storage });
 
 // POST /api/messages - Send a new message (All authenticated users)
 router.post(
@@ -21,6 +36,23 @@ router.post(
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
+  }
+);
+
+// POST /api/messages/upload - Upload an image (All authenticated users)
+router.post(
+  "/upload",
+  authMiddleware.verifyToken, // Ensure the user is authenticated
+  upload.single("image"), // Handle single image upload
+  (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // File path for the uploaded image
+    const imageUrl = `/uploads/${req.file.filename}`;
+
+    res.status(200).json({ message: "Image uploaded successfully", imageUrl });
   }
 );
 

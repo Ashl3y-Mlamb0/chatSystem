@@ -1,4 +1,3 @@
-// src/socketEvents.js
 const Channel = require("./models/Channel");
 const Message = require("./models/Message");
 const User = require("./models/User");
@@ -55,9 +54,9 @@ module.exports = function (io, socket) {
     io.to(channelId).emit("userLeft", `User left channel ${channelId}`);
   });
 
-  // Send a message to the channel
+  // Send a message (with optional image URL) to the channel
   socket.on("sendMessage", async (message) => {
-    const { channelId, content } = message;
+    const { channelId, content, imageUrl } = message;
 
     try {
       const channel = await Channel.findById(channelId).populate("group");
@@ -81,9 +80,10 @@ module.exports = function (io, socket) {
         });
       }
 
-      // Save the new message in the database
+      // Save the new message in the database, include imageUrl if available
       const newMessage = await Message.create({
-        content,
+        content: content || "", // Allow content to be empty if image is sent
+        imageUrl: imageUrl || null, // Only save imageUrl if provided
         sender: user._id,
         channel: channelId,
       });
@@ -92,9 +92,13 @@ module.exports = function (io, socket) {
       io.to(channelId).emit("receiveMessage", {
         _id: newMessage._id,
         content: newMessage.content,
+        imageUrl: newMessage.imageUrl, // Send imageUrl with the message
         sender: { username: user.username, avatar: user.avatar, _id: user._id },
       });
-      console.log(`Message sent to channel ${channelId}: ${content}`);
+
+      console.log(
+        `Message sent to channel ${channelId}: ${content || "(image)"}`
+      );
     } catch (error) {
       socket.emit("error", { message: "Error sending message" });
     }

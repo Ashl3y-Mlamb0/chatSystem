@@ -5,6 +5,7 @@ import {
   ElementRef,
   ViewChild,
   AfterViewInit,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -35,26 +36,28 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   newMessage: string = '';
   editingMessage: Message | null = null; // Track the message being edited
   currentUser: any; // Add this to store the current user
+  selectedFile: File | null = null; // Store selected image file
+  previewImage: string | null = null; // Preview the selected image
   private messageDebounce = false; // Added for debouncing message sending
   private messageSubscription: Subscription | null = null;
   private previousMessageSubscription: Subscription | null = null;
   public apiRoot = environment.apiRoot; // Environment API URL
 
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
+  @ViewChild('fileInput', { static: false }) fileInput!: ElementRef;
 
   constructor(
     private groupService: GroupService,
     private channelService: ChannelService,
     private chatService: ChatService,
     public authService: AuthService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef // Inject ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     // Fetch the current user from AuthService
     this.currentUser = this.authService.getCurrentUser();
-    console.log(this.currentUser, 'current');
-    // this.checkSocketConnection();
     // Subscribe to route changes and handle group/channel selection
     this.route.paramMap.subscribe((params) => {
       const groupId = params.get('groupId');
@@ -151,7 +154,6 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   // Called when a channel is selected
   onChannelSelect(channel: Channel) {
     if (!channel) {
-      console.warn('Channel selection is empty!');
       return;
     }
 
@@ -180,7 +182,6 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
         .listenForNewMessages()
         .subscribe({
           next: (message: Message) => {
-            console.log(message);
             this.messages.push(message);
             this.scrollToBottom(); // Scroll to bottom when a new message arrives
           },
@@ -212,17 +213,115 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  // Handle file selection and generate preview
+  onFileSelected(event: any) {
+    if (event.target.files.length > 0) {
+      this.selectedFile = event.target.files[0]; // Store selected file
+
+      // Only proceed if selectedFile is not null
+      if (this.selectedFile) {
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          const img = new Image();
+          img.src = e.target.result;
+
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxWidth = 800; // Set maximum width
+            const maxHeight = 600; // Set maximum height
+            let width = img.width;
+            let height = img.height;
+
+            // Calculate the new dimensions maintaining the aspect ratio
+            if (width > height) {
+              if (width > maxWidth) {
+                height = Math.round((height *= maxWidth / width));
+                width = maxWidth;
+              }
+            } else {
+              if (height > maxHeight) {
+                width = Math.round((width *= maxHeight / height));
+                height = maxHeight;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx!.drawImage(img, 0, 0, width, height);
+
+            // Convert the canvas content to a blob
+            canvas.toBlob((blob) => {
+              this.selectedFile = new File([blob!], this.selectedFile!.name, {
+                type: 'image/jpeg',
+              });
+
+              // Create a preview URL from the resized image blob
+              this.previewImage = canvas.toDataURL('image/jpeg');
+              this.cdr.detectChanges(); // Trigger change detection
+            }, 'image/jpeg');
+          };
+        };
+        reader.readAsDataURL(this.selectedFile); // Safe to call because it's checked
+      }
+    }
+  }
+
+  // Remove the selected image before sending
+  removeImage() {
+    this.selectedFile = null;
+    this.previewImage = null; // Clear the image preview
+    this.fileInput.nativeElement.value = ''; // Reset the file input
+    this.cdr.detectChanges(); // Trigger change detection for instant update
+  }
+
   // Send a new message using Socket.IO with debounce to prevent spamming
-  sendMessage() {
+  async sendMessage() {
     if (this.messageDebounce) return; // Prevent spamming
     this.messageDebounce = true;
 
-    if (this.newMessage.trim() !== '' && this.selectedChannel) {
-      this.chatService.sendMessage(this.selectedChannel._id, this.newMessage);
-      this.newMessage = ''; // Clear the input field
+    const imageUrl = await this.uploadImage(); // Upload image and get the URL
+    if (this.newMessage.trim() !== '' || imageUrl) {
+      if (this.selectedChannel) {
+        // Send the message through the chat service with the image URL (if available)
+        this.chatService.sendMessage(
+          this.selectedChannel._id,
+          this.newMessage,
+          imageUrl
+        );
+        this.newMessage = ''; // Clear the message input
+        this.removeImage(); // Clear the image preview after sending
+      }
     }
 
     setTimeout(() => (this.messageDebounce = false), 500); // Debounce for 500ms
+  }
+
+  // Upload image to the server
+  uploadImage(): Promise<string | null> {
+    if (
+      !this.fileInput ||
+      !this.fileInput.nativeElement ||
+      !this.selectedFile
+    ) {
+      return Promise.resolve(null); // No file to upload or input unavailable
+    }
+
+    const formData = new FormData();
+    formData.append('image', this.selectedFile);
+
+    return this.chatService
+      .uploadImage(formData)
+      .toPromise()
+      .then((res: any) => {
+        this.selectedFile = null; // Clear the selected file after upload
+        this.fileInput.nativeElement.value = ''; // Reset file input
+        return res.imageUrl; // Return the uploaded image URL
+      })
+      .catch((err) => {
+        console.error('Image upload failed:', err);
+        return null; // Return null if upload failed
+      });
   }
 
   // Method to edit a message

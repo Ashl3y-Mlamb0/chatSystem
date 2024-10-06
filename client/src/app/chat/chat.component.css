@@ -67,6 +67,7 @@
   background-color: #007bff;
   color: white;
   align-self: flex-end;
+  margin-left: auto; /* Align your own messages to the right */
 }
 
 /* Reordering logic */
@@ -113,15 +114,26 @@
   background-color: #ccc;
 }
 
+/* Image message styles */
+.sent-image {
+  max-width: 100%;
+  max-height: 300px;
+  margin-top: 10px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* Updated input area styles */
 .input-area {
   padding: 20px;
   display: flex;
   align-items: center;
   background-color: white;
   border-top: 1px solid #ccc;
+  gap: 10px; /* Adds space between elements */
 }
 
-.input-area input {
+.input-area input[type="text"] {
   flex-grow: 1;
   padding: 10px;
   margin-right: 10px;
@@ -132,8 +144,35 @@
   transition: border-color 0.3s ease;
 }
 
-.input-area input:focus {
+.input-area input[type="text"]:focus {
   border-color: #007bff;
+}
+
+.input-area input[type="file"] {
+  display: none; /* Hide the actual file input */
+}
+
+/* Label to style the file upload button */
+.upload-label {
+  padding: 10px;
+  background-color: #f1f1f1;
+  color: #333;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  transition: background-color 0.3s ease;
+}
+
+.upload-label:hover {
+  background-color: #ccc;
+}
+
+.upload-label i {
+  font-size: 18px;
 }
 
 .input-area button {
@@ -148,4 +187,55 @@
 
 .input-area button:hover {
   background-color: #0056b3;
+}
+
+/* Scrollbar styling for the messages container */
+.messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.messages::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 10px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+/* Styles for the image preview below the input */
+.image-preview-below {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px; /* Space between input area and preview */
+  padding: 10px;
+  background-color: #fff; /* Optional background to separate preview */
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+.preview-img-below {
+  max-width: 300px; /* Control preview size */
+  max-height: 100px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.remove-image-btn {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.remove-image-btn:hover {
+  background-color: #ff0000;
 }

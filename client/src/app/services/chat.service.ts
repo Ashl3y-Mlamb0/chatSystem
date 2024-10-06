@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Socket, SocketIoConfig, SocketIoModule } from 'ngx-socket-io';
+import { Socket, SocketIoConfig } from 'ngx-socket-io';
 import { environment } from '../../environments/environment'; // Your backend URL
 import { AuthService } from './auth.service'; // AuthService for fetching token
 import { Observable } from 'rxjs';
@@ -45,13 +45,28 @@ export class ChatService {
     this.socket.emit('leaveChannel', channelId);
   }
 
-  // Send a message
-  sendMessage(channelId: string, messageContent: string) {
-    this.socket.emit('sendMessage', { channelId, content: messageContent });
+  // Send a message, with optional image URL
+  sendMessage(
+    channelId: string,
+    messageContent: string,
+    imageUrl: string | null = null
+  ) {
+    const messageData: any = { channelId, content: messageContent };
+    if (imageUrl) {
+      messageData.imageUrl = imageUrl; // Include image URL if provided
+    }
+    this.socket.emit('sendMessage', messageData);
+  }
+
+  // Method to upload an image
+  uploadImage(formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrl}/upload`, formData, {
+      headers: this.authService.getHeaders(), // Ensure proper headers (like auth) are sent
+    });
   }
 
   // Method to update a message by ID
-  updateMessage(messageId: string, content: string) {
+  updateMessage(messageId: string, content: string): Observable<Message> {
     return this.http.put<Message>(
       `${this.apiUrl}/${messageId}`,
       { content },
