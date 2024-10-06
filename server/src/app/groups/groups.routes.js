@@ -3,6 +3,26 @@ const router = express.Router();
 const groupsService = require("./groups.service");
 const authMiddleware = require("../../middleware/auth.middleware");
 
+// GET /api/groups - Get all groups (Accessible by all authenticated users)
+router.get(
+  "/",
+  authMiddleware.verifyToken, // Ensure the user is authenticated
+  async (req, res) => {
+    try {
+      // Use the groupsService to get all groups
+      const groups = await groupsService.getAllGroups();
+
+      if (!groups || groups.length === 0) {
+        return res.status(404).json({ message: "No groups found" });
+      }
+
+      res.json(groups); // Return the list of all groups
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // GET /api/groups/accessible - Get groups accessible by the current user
 router.get(
   "/accessible",
@@ -77,13 +97,14 @@ router.put(
   authMiddleware.isGroupAdminForGroup, // Check if user is an admin of this group
   async (req, res) => {
     const { groupId } = req.params;
-    const { name, description } = req.body;
+    const { name, description, joinRequestsAction } = req.body;
 
     try {
       const updatedGroup = await groupsService.updateGroup(
         groupId,
         name,
-        description
+        description,
+        joinRequestsAction
       );
       if (!updatedGroup) {
         return res.status(404).json({ message: "Group not found" });
@@ -112,6 +133,40 @@ router.delete(
       res.json({ message: "Group deleted successfully" });
     } catch (err) {
       res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// POST /api/groups/:groupId/join - Request to join a group
+router.post(
+  "/:groupId/join",
+  authMiddleware.verifyToken, // Ensure the user is authenticated
+  async (req, res) => {
+    const { groupId } = req.params;
+    const userId = req.user._id;
+
+    try {
+      // Call the service to handle the join request
+      const group = await groupsService.requestToJoinGroup(groupId, userId);
+
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+
+      res.json({ message: "Join request sent successfully", group });
+    } catch (err) {
+      // Check if it's a known error (user already requested or is a member)
+      if (
+        err.message === "Already a member" ||
+        err.message === "Request already sent"
+      ) {
+        return res.status(400).json({ message: err.message });
+      }
+
+      // Handle other unexpected errors
+      res
+        .status(500)
+        .json({ error: "An error occurred while sending the join request" });
     }
   }
 );
