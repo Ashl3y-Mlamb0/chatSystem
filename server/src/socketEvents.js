@@ -92,7 +92,7 @@ module.exports = function (io, socket) {
       io.to(channelId).emit("receiveMessage", {
         _id: newMessage._id,
         content: newMessage.content,
-        sender: { username: user.username, avatar: user.avatar },
+        sender: { username: user.username, avatar: user.avatar, _id: user._id },
       });
       console.log(`Message sent to channel ${channelId}: ${content}`);
     } catch (error) {
