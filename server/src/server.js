@@ -13,6 +13,7 @@ const messageRoutes = require("./app/messages/messages.routes");
 
 const socketAuthMiddleware = require("./middleware/socketAuth.middleware");
 const socketEvents = require("./socketEvents");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
@@ -43,6 +44,9 @@ app.use("/api/users", userRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/channels", channelRoutes);
 app.use("/api/messages", messageRoutes);
+
+// Serve the uploads folder to make avatars accessible
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Socket.IO authentication middleware
 io.use(socketAuthMiddleware); // Apply the auth middleware to every socket connection
