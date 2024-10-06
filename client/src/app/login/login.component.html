@@ -7,7 +7,7 @@
   </div>
 
   <form (ngSubmit)="onLogin()">
-    <div>
+    <div class="input-group">
       <label for="username">Username:</label>
       <input
         type="text"
@@ -18,7 +18,7 @@
         placeholder="Enter your username"
       />
     </div>
-    <div>
+    <div class="input-group">
       <label for="password">Password:</label>
       <input
         type="password"
@@ -29,6 +29,6 @@
         placeholder="Enter your password"
       />
     </div>
-    <button type="submit">Login</button>
+    <button type="submit" class="login-button">Login</button>
   </form>
 </div>

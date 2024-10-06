@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../services/auth.service';
-import { UserService } from '../services/user.service';
 
 @Component({
   selector: 'app-signup',
@@ -16,15 +15,11 @@ export class SignupComponent {
   username = '';
   email = '';
   password = '';
+  errorMessage = ''; // To store the error message
 
-  constructor(
-    private authService: AuthService,
-    private userService: UserService,
-    private router: Router
-  ) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   onSignup() {
-    // Call signup method from AuthService and handle response
     this.authService
       .signup(this.username, this.email, this.password)
       .subscribe({
@@ -35,10 +30,9 @@ export class SignupComponent {
         },
         error: (err) => {
           console.error('Signup failed:', err);
-          // Show alert or error message
-          alert(
-            'Signup failed. Username might be taken or other error occurred.'
-          );
+          // Set the error message
+          this.errorMessage =
+            'Signup failed. Username or email might already be in use.';
         },
       });
   }
