@@ -16,6 +16,8 @@ import { ActivatedRoute } from '@angular/router';
 import { Channel } from '../models/channel.model';
 import { Subscription } from 'rxjs';
 import { Group } from '../models/group.model';
+import { AuthService } from '../services/auth.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-chat',
@@ -32,9 +34,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
   messages: Message[] = [];
   newMessage: string = '';
   editingMessage: Message | null = null; // Track the message being edited
+  currentUser: any; // Add this to store the current user
   private messageDebounce = false; // Added for debouncing message sending
   private messageSubscription: Subscription | null = null;
   private previousMessageSubscription: Subscription | null = null;
+  public apiRoot = environment.apiRoot; // Environment API URL
 
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
@@ -42,11 +46,14 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
     private groupService: GroupService,
     private channelService: ChannelService,
     private chatService: ChatService,
+    public authService: AuthService,
     private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
-    // Test the socket connection
+    // Fetch the current user from AuthService
+    this.currentUser = this.authService.getCurrentUser();
+    console.log(this.currentUser, 'current');
     // this.checkSocketConnection();
     // Subscribe to route changes and handle group/channel selection
     this.route.paramMap.subscribe((params) => {
@@ -95,8 +102,10 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewInit {
 
   scrollToBottom(): void {
     try {
-      this.messagesContainer.nativeElement.scrollTop =
-        this.messagesContainer.nativeElement.scrollHeight;
+      setTimeout(() => {
+        this.messagesContainer.nativeElement.scrollTop =
+          this.messagesContainer.nativeElement.scrollHeight;
+      }, 100); // Delay of 100ms (adjust if needed)
     } catch (err) {
       console.error('Error scrolling to bottom', err);
     }

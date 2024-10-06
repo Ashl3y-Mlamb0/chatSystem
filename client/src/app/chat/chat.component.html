@@ -24,18 +24,51 @@
       <div *ngFor="let message of messages" class="message">
         <div *ngIf="editingMessage && editingMessage._id === message._id">
           <!-- Edit mode for the message -->
-          <input [(ngModel)]="editingMessage.content" placeholder="Edit your message..." />
+          <input
+            [(ngModel)]="editingMessage.content"
+            placeholder="Edit your message..."
+          />
           <button (click)="saveMessage()">Save</button>
           <button (click)="cancelMessageEdit()">Cancel</button>
         </div>
-        <div *ngIf="!editingMessage || editingMessage._id !== message._id" class="message-row">
+        <div
+          *ngIf="!editingMessage || editingMessage._id !== message._id"
+          class="message-row"
+        >
           <!-- Normal display mode -->
-          <div class="message-header">
-            <img [src]="message.sender.avatar" alt="Avatar" class="avatar" />
-            <span class="sender">{{ message.sender.username }}:</span>
-            <span class="message-content">{{ message.content }}</span>
+          <div
+            class="message-bubble"
+            [ngClass]="{
+              'own-message': message.sender._id === currentUser.id
+            }"
+          >
+            <img
+              [src]="apiRoot + message.sender.avatar"
+              alt="Avatar"
+              class="avatar"
+            />
+            <div class="message-content">
+              <span class="sender">{{ message.sender.username }}:</span>
+              <span>{{ message.content }}</span>
+            </div>
           </div>
-          <button class="edit-button" (click)="editMessage(message)">Edit</button> <!-- Moved the edit button -->
+          <button
+            *ngIf="
+              authService.hasRole('superAdmin') ||
+              authService.hasRole('groupAdmin')
+            "
+            class="edit-button"
+            (click)="editMessage(message)"
+          >
+            Edit
+          </button>
+          <div
+            class="spacer"
+            *ngIf="
+              !authService.hasRole('superAdmin') &&
+              !authService.hasRole('groupAdmin')
+            "
+          ></div>
         </div>
       </div>
     </div>
@@ -48,7 +81,9 @@
         (keyup.enter)="sendMessage()"
         [disabled]="!selectedChannel"
       />
-      <button (click)="sendMessage()" [disabled]="!selectedChannel">Send</button>
+      <button (click)="sendMessage()" [disabled]="!selectedChannel">
+        Send
+      </button>
     </div>
   </div>
 </div>
