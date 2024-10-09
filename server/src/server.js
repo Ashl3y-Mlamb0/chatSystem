@@ -4,6 +4,7 @@ const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
+const bcrypt = require("bcrypt");
 
 const authRoutes = require("./app/auth/auth.routes");
 const userRoutes = require("./app/users/users.routes");
@@ -13,6 +14,7 @@ const messageRoutes = require("./app/messages/messages.routes");
 
 const socketAuthMiddleware = require("./middleware/socketAuth.middleware");
 const socketEvents = require("./socketEvents");
+const User = require("./models/User");
 const path = require("path");
 
 const app = express();
@@ -33,6 +35,40 @@ mongoose
   .connect(mongoURI, {})
   .then(() => {
     console.log("MongoDB connected successfully");
+
+    // Check if admin user exists
+    User.findOne({ username: "super" })
+      .then((admin) => {
+        if (!admin) {
+          // Hash the password before creating the admin user
+          bcrypt.hash("123", 10, (err, hashedPassword) => {
+            if (err) {
+              console.error("Error hashing password:", err);
+              return;
+            }
+
+            // Create a default admin user with hashed password
+            const newAdmin = new User({
+              username: "super",
+              email: "admin@example.com",
+              password: hashedPassword, // Use the hashed password
+              roles: "superAdmin",
+            });
+
+            newAdmin
+              .save()
+              .then(() => {
+                console.log("Default admin user created");
+              })
+              .catch((err) => {
+                console.error("Error creating admin user:", err);
+              });
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("Error finding admin user:", err);
+      });
   })
   .catch((err) => {
     console.error("MongoDB connection error:", err);
